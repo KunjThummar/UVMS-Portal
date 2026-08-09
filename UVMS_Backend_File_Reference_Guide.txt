@@ -1,0 +1,1027 @@
+	================================================================
+UNIVERSITY VOLUNTEER MANAGEMENT SYSTEM (UVMS) — BACKEND FILE REFERENCE GUIDE
+For: Solo Student Project | Stack: Node.js + Express + MongoDB (Mongoose)
+Note: Validation shown here uses Joi-style schemas, as planned earlier.
+================================================================
+
+HOW TO READ THIS DOCUMENT
+--------------------------
+Every module has multiple files.
+For each file you will see:
+  - What the file does
+  - What functions it holds
+  - What each function does
+
+The flow is always:
+  routes.js --> controller.js --> service.js --> Model (Mongoose) --> Database
+
+NOTE ON ARCHITECTURE (different from a raw-SQL project):
+  This project does NOT have a separate repository.js layer.
+  In a raw-SQL project, repository.js is needed because someone has
+  to hand-write every SQL query. Here, Mongoose models already ARE
+  that query layer (Student.find(), Event.findById(), etc.), so the
+  service.js file calls the Model directly. Adding a repository.js
+  on top of Mongoose would just be an extra file that forwards calls
+  to the model with no real logic in it.
+
+Validation works like this:
+  - Each module has a validation.js file
+  - It exports Joi schemas (objects describing what valid input looks like)
+  - A shared validate(schema) middleware checks req.body/query/params
+    against the schema before the controller ever runs
+  - If validation fails, middleware throws a 400 error with the details
+  - If it passes, request moves on to the controller
+
+================================================================
+MODULE 1: AUTH
+================================================================
+Handles registration and login for all three roles (Student, Faculty,
+Admin), plus "who am I" lookup. Admin has NO register route at all —
+it is seeded once via a CLI script, not the API.
+
+----------------------------------------------------------------
+FILE: auth/auth.routes.js
+----------------------------------------------------------------
+What it does:
+  Lists all the URL paths for authentication and connects
+  them to controller functions.
+
+URLs it holds:
+  POST   /api/auth/student/register   --> registerStudent()
+  POST   /api/auth/student/login      --> loginStudent()
+  POST   /api/auth/faculty/register   --> registerFaculty()
+  POST   /api/auth/faculty/login      --> loginFaculty()
+  POST   /api/auth/admin/login        --> loginAdmin()
+  GET    /api/auth/me                 --> getMe()
+
+  NOTE: /api/auth/faculty/register is a real working endpoint, but it
+  is deliberately never linked from any student-facing page or nav
+  menu. Obscurity alone is not real security — consider adding rate
+  limiting or an admin-issued invite code on this route later.
+
+----------------------------------------------------------------
+FILE: auth/auth.controller.js
+----------------------------------------------------------------
+What it does:
+  Receives the HTTP request, calls the service, sends response.
+  No business logic here. Just reads request, calls service,
+  sends back response.
+
+Functions it holds:
+  registerStudent()
+    - Calls validateStudentRegister(req.body), if errors return 400
+    - Calls authService.registerStudent()
+    - Returns success message (student must log in separately)
+
+  loginStudent()
+    - Calls validateLogin(req.body), if errors return 400
+    - Calls authService.loginStudent()
+    - Returns JWT token + student profile
+
+  registerFaculty()
+    - Calls validateFacultyRegister(req.body), if errors return 400
+    - Calls authService.registerFaculty()
+    - Returns success message
+
+  loginFaculty()
+    - Calls validateLogin(req.body), if errors return 400
+    - Calls authService.loginFaculty()
+    - Returns JWT token + faculty profile
+
+  loginAdmin()
+    - Calls validateLogin(req.body), if errors return 400
+    - Calls authService.loginAdmin()
+    - Returns JWT token + admin profile
+
+  getMe()
+    - Reads req.user (set by the authenticate middleware)
+    - Calls authService.getProfileByRole(req.user.id, req.user.role)
+    - Returns the full profile from the correct collection
+
+----------------------------------------------------------------
+FILE: auth/auth.service.js
+----------------------------------------------------------------
+What it does:
+  All the actual register/login logic lives here.
+  This file decides what happens, not how the request/response works.
+
+Functions it holds:
+  registerStudent(data)
+    - Checks email matches the official university domain pattern
+    - Checks email and studentId are not already used
+    - Hashes password using bcrypt
+    - Creates the Student document
+    - Returns the created student (without password)
+
+  loginStudent(email, password)
+    - Finds the student by email
+    - Compares password using bcrypt.compare()
+    - If correct, generates and returns a JWT token
+    - If wrong, throws ApiError(401, "Invalid credentials")
+
+  registerFaculty(data)
+    - Checks email is not already used
+    - Hashes password using bcrypt
+    - Creates the Faculty document
+    - Returns the created faculty (without password)
+
+  loginFaculty(email, password)
+    - Same pattern as loginStudent, checks Faculty collection
+
+  loginAdmin(email, password)
+    - Same pattern as loginStudent, checks Admin collection
+
+  getProfileByRole(id, role)
+    - Looks up the right collection based on role
+      (Student / Faculty / Admin)
+    - Returns the profile without the password field
+
+----------------------------------------------------------------
+FILE: auth/auth.validation.js
+----------------------------------------------------------------
+What it does:
+  Joi schemas that check request data is correct before it
+  reaches the service.
+
+Schemas it holds:
+  studentRegisterSchema
+    - fullName: required string
+    - studentId: required string
+    - email: required, must match official domain pattern
+    - password: required string
+    - instituteId: required, valid Mongo ObjectId
+    - departmentId: required, valid Mongo ObjectId
+    - semester: required number, 1 to 12
+
+  facultyRegisterSchema
+    - fullName: required string
+    - email: required, valid email format
+    - password: required string
+    - instituteId: required, valid Mongo ObjectId
+    - departmentId: required, valid Mongo ObjectId
+
+  loginSchema (shared by all three roles)
+    - email: required, valid email format
+    - password: required string
+
+  adminSeedSchema (used only by the CLI script, not an HTTP route)
+    - fullName: required string
+    - email: required, valid email format
+    - password: required string
+    - seedSecret: required, must match value in .env
+
+----------------------------------------------------------------
+FILE: scripts/seedAdmin.js  (NOT a route — a one-time CLI script)
+----------------------------------------------------------------
+What it does:
+  Creates the one and only way an Admin account gets created.
+  Run manually once: node scripts/seedAdmin.js
+  This is intentionally NOT an API endpoint, per project requirement
+  ("no register page for admin, no route needed either") — keeping
+  it as a script instead of even an internal route removes any
+  attack surface completely.
+
+The function:
+  seedAdmin()
+    - Reads admin details from .env or CLI arguments
+    - Checks no Admin already exists with that email
+    - Hashes the password using bcrypt
+    - Inserts directly into the Admin collection
+
+
+================================================================
+MODULE 2: INSTITUTES & DEPARTMENTS (reference data, admin-managed)
+================================================================
+Simple lookup data used by registration dropdowns and event targeting.
+Both entities follow the exact same file pattern, so they are grouped
+into one module here.
+
+----------------------------------------------------------------
+FILE: institutes/institute.routes.js
+----------------------------------------------------------------
+What it does:
+  Lists all URL paths for institute operations.
+
+URLs it holds:
+  GET    /api/institutes       --> listInstitutes()    (public)
+  POST   /api/institutes       --> createInstitute()   (admin only)
+  PUT    /api/institutes/:id   --> updateInstitute()   (admin only)
+  DELETE /api/institutes/:id   --> deleteInstitute()   (admin only)
+
+----------------------------------------------------------------
+FILE: institutes/institute.controller.js
+----------------------------------------------------------------
+Functions it holds:
+  listInstitutes()
+    - Calls instituteService.getAll()
+    - Returns all institutes — needed for registration dropdowns
+
+  createInstitute()
+    - Calls validateInstitute(req.body), if errors return 400
+    - Calls instituteService.create()
+
+  updateInstitute()
+    - Calls validateInstitute(req.body), if errors return 400
+    - Calls instituteService.update()
+
+  deleteInstitute()
+    - Calls instituteService.remove()
+
+----------------------------------------------------------------
+FILE: institutes/institute.service.js
+----------------------------------------------------------------
+Functions it holds:
+  getAll()
+    - Returns every institute
+
+  create(data)
+    - Checks name and code are not already used
+    - Creates the Institute document
+
+  update(id, data)
+    - Updates name/code
+
+  remove(id)
+    - Checks no Department, Student, or Faculty document still
+      references this institute before deleting
+    - Throws ApiError(409, "Institute still has linked departments
+      or users") if it does
+
+  RULES THIS FILE FOLLOWS:
+    - name and code must both be unique
+    - never delete an institute that still has data pointing to it
+
+----------------------------------------------------------------
+FILE: institutes/institute.validation.js
+----------------------------------------------------------------
+Schemas it holds:
+  instituteSchema
+    - name: required string
+    - code: required string
+
+----------------------------------------------------------------
+FILE: departments/department.routes.js
+----------------------------------------------------------------
+URLs it holds:
+  GET    /api/departments?instituteId=   --> listDepartments()   (public)
+  POST   /api/departments                --> createDepartment()  (admin only)
+  PUT    /api/departments/:id            --> updateDepartment()  (admin only)
+  DELETE /api/departments/:id            --> deleteDepartment()  (admin only)
+
+----------------------------------------------------------------
+FILE: departments/department.controller.js
+----------------------------------------------------------------
+Functions it holds:
+  listDepartments()
+    - Reads instituteId from req.query (optional filter)
+    - Calls departmentService.getAll(instituteId)
+    - Returns departments — needed for registration and
+      event-creation dropdowns
+
+  createDepartment()
+    - Calls validateDepartment(req.body), if errors return 400
+    - Calls departmentService.create()
+
+  updateDepartment()
+    - Calls validateDepartment(req.body), if errors return 400
+    - Calls departmentService.update()
+
+  deleteDepartment()
+    - Calls departmentService.remove()
+
+----------------------------------------------------------------
+FILE: departments/department.service.js
+----------------------------------------------------------------
+Functions it holds:
+  getAll(instituteId)
+    - If instituteId given, filters by it
+    - Otherwise returns all departments
+
+  create(data)
+    - Checks code is unique within that institute
+      (two institutes can each have their own "CSE")
+    - Creates the Department document
+
+  update(id, data)
+    - Updates name/code
+
+  remove(id)
+    - Same "no linked data" guard as institute delete
+
+  RULES THIS FILE FOLLOWS:
+    - department code unique per institute, not globally unique
+    - never delete a department that still has students/faculty in it
+
+----------------------------------------------------------------
+FILE: departments/department.validation.js
+----------------------------------------------------------------
+Schemas it holds:
+  departmentSchema
+    - name: required string
+    - code: required string
+    - instituteId: required, valid Mongo ObjectId
+
+
+================================================================
+MODULE 3: STUDENTS
+================================================================
+Everything a logged-in student does: browsing eligible events,
+applying, and viewing their own applications.
+
+----------------------------------------------------------------
+FILE: students/student.routes.js
+----------------------------------------------------------------
+What it does:
+  Lists all URL paths for student operations.
+  Every route here requires authenticate + authorize('student').
+
+URLs it holds:
+  GET    /api/student/profile              --> getProfile()
+  GET    /api/student/events               --> getEligibleEvents()
+  GET    /api/student/events/:id           --> getEventById()
+  POST   /api/student/events/:id/apply     --> applyToEvent()
+  GET    /api/student/applications         --> getMyApplications()
+
+----------------------------------------------------------------
+FILE: students/student.controller.js
+----------------------------------------------------------------
+Functions it holds:
+  getProfile()
+    - Returns the logged-in student's own profile
+
+  getEligibleEvents()
+    - Reads status, dateFrom, dateTo, search from req.query
+    - Calls eventService.getEligibleEventsForStudent()
+    - Returns only events this student is actually eligible for
+
+  getEventById()
+    - Reads event id from req.params.id
+    - Calls eventService.getEventForStudent()
+    - Throws 403 if the student is not eligible for this event
+      (stops someone from guessing IDs to peek at events they
+      shouldn't see)
+
+  applyToEvent()
+    - Calls validateApply(req.body), if errors return 400
+    - Reads event id from req.params.id
+    - Calls applicationService.applyToEvent()
+    - Returns the created application
+
+  getMyApplications()
+    - Reads status from req.query (optional filter)
+    - Calls applicationService.getByStudent()
+    - Returns this student's own applications
+
+----------------------------------------------------------------
+FILE: students/student.service.js
+----------------------------------------------------------------
+What it does:
+  Only handles simple student profile lookups. Event eligibility
+  logic and application logic live in their own service files
+  (event.service.js and application.service.js) since faculty,
+  admin, and students all touch events/applications and the logic
+  should not be duplicated per-role.
+
+Functions it holds:
+  getProfile(studentId)
+    - Finds the student, returns profile without password
+
+----------------------------------------------------------------
+FILE: students/student.validation.js
+----------------------------------------------------------------
+Schemas it holds:
+  (No student-specific schema needed beyond auth.validation.js and
+  application.validation.js — students don't submit any other
+  free-form data.)
+
+
+================================================================
+MODULE 4: EVENTS (core module — shared by students, faculty, admin)
+================================================================
+This is the most important module in the whole system. It owns
+event creation, eligibility checks, capacity/deadline rules, and
+archiving. Faculty and Admin each get their own routes/controller
+files (different permissions), but both call into the SAME
+event.service.js, so the business rules only exist in one place.
+
+----------------------------------------------------------------
+FILE: events/event.service.js
+----------------------------------------------------------------
+What it does:
+  All business rules for events live here. This is the file that
+  enforces every capacity/deadline/status rule from the SRS.
+  Called by both faculty.controller.js and admin.controller.js.
+
+Functions it holds:
+  isStudentEligibleForEvent(student, event)
+    - Returns true/false
+    - University level --> always true
+    - Institute level --> student.instituteId equals event.targetInstituteId
+    - Department level --> event.targetDepartmentIds includes student.departmentId
+
+  getEligibleEventsForStudent(student, filters)
+    - Builds a query: University events OR Institute events matching
+      student's institute OR Department events matching student's
+      department
+    - Applies extra filters (status, date range, search text)
+    - Returns the matching events
+
+  getEventForStudent(eventId, student)
+    - Fetches one event
+    - Calls isStudentEligibleForEvent() — throws 403 if false
+    - Returns the event
+
+  getAllEventsForFacultyOrAdmin(filters)
+    - No eligibility restriction — faculty and admin see every event
+    - Applies filters (level, status, institute, department, date)
+
+  createEvent(data, facultyId)
+    - Validates applicationDeadline is before eventDate
+    - Sets createdBy = facultyId
+    - Creates the Event document
+    - If eventLevel is 'Department', also writes one
+      EventDepartmentMapping row per target department
+
+  updateEvent(eventId, data, actorId, actorRole)
+    - If actorRole is 'faculty', checks event.createdBy equals
+      actorId — throws 403 otherwise. Admin skips this check.
+    - Updates the event fields
+    - If targetDepartmentIds changed, deletes old
+      EventDepartmentMapping rows and inserts new ones
+
+  reopenEvent(eventId, actorId, actorRole)
+    - Same ownership check as updateEvent
+    - Throws ApiError(400, "Cannot reopen: application deadline has
+      already passed") if applicationDeadline < now
+    - Throws ApiError(400, "Cannot reopen: volunteer capacity already
+      reached") if approvedCount >= volunteerCapacity
+    - Otherwise sets status = 'Open'
+
+  archiveEvent(eventId, actorId, actorRole)
+    - Same ownership check as updateEvent
+    - Sets isArchived = true
+    - This protects the event from the 1-year auto-delete job
+
+  checkAndCloseIfFull(eventId)
+    - Checks if approvedCount >= volunteerCapacity
+    - If so: sets status = 'Full', then bulk-updates every remaining
+      Pending application on this event to Rejected, with
+      decisionReason = "auto-rejected: capacity reached"
+
+  checkAndCloseIfDeadlinePassed(eventId)
+    - Checks if applicationDeadline < now
+    - If so: sets status = 'ApplicationClosed', then bulk-updates
+      every remaining Pending application to Rejected, with
+      decisionReason = "auto-rejected: deadline passed"
+
+  RULES THIS FILE FOLLOWS:
+    - A student belongs to exactly one department, so no dedup
+      logic is needed anywhere in the eligibility checks
+    - Faculty can only edit/reopen/archive their OWN events
+    - Admin can edit/reopen/archive ANY event, no ownership check
+    - Reopen must give a SPECIFIC reason on failure, never a
+      generic "cannot reopen" message
+
+----------------------------------------------------------------
+FILE: events/event.validation.js
+----------------------------------------------------------------
+Schemas it holds:
+  createEventSchema
+    - title: required string
+    - description: required string
+    - eventDate: required date, must be in the future
+    - applicationDeadline: required date, must be before eventDate
+      and in the future
+    - volunteerCapacity: required number, minimum 1
+    - eventLevel: required, one of University / Institute / Department
+    - targetInstituteId: required ONLY if eventLevel is Institute
+    - targetDepartmentIds: required non-empty array ONLY if
+      eventLevel is Department
+
+  updateEventSchema
+    - Same fields as createEventSchema, all optional (partial update)
+
+----------------------------------------------------------------
+FILE: events/faculty.routes.js
+----------------------------------------------------------------
+What it does:
+  Lists all event-related URL paths a faculty member can access.
+  Every route here requires authenticate + authorize('faculty').
+
+URLs it holds:
+  GET    /api/faculty/events                     --> getAllEvents()
+  GET    /api/faculty/events/:id                  --> getEventById()
+  POST   /api/faculty/events                      --> createEvent()
+  PUT    /api/faculty/events/:id                  --> updateEvent()
+  PATCH  /api/faculty/events/:id/reopen           --> reopenEvent()
+  PATCH  /api/faculty/events/:id/archive          --> archiveEvent()
+  POST   /api/faculty/events/:id/notify           --> notifyStudents()
+  GET    /api/faculty/events/:id/applications     --> getApplicationsForEvent()
+  PATCH  /api/faculty/applications/:id/approve    --> approveApplication()
+  PATCH  /api/faculty/applications/:id/reject     --> rejectApplication()
+
+----------------------------------------------------------------
+FILE: events/faculty.controller.js
+----------------------------------------------------------------
+What it does:
+  Receives faculty requests, calls event.service.js /
+  application.service.js / email.service.js, sends response.
+
+Functions it holds:
+  getAllEvents()
+    - Reads filters from req.query
+    - Calls eventService.getAllEventsForFacultyOrAdmin()
+
+  getEventById()
+    - Calls eventService directly (no ownership restriction on read)
+
+  createEvent()
+    - Calls validateCreateEvent(req.body), if errors return 400
+    - Calls eventService.createEvent(req.body, req.user.id)
+
+  updateEvent()
+    - Calls validateUpdateEvent(req.body), if errors return 400
+    - Calls eventService.updateEvent(id, req.body, req.user.id, 'faculty')
+
+  reopenEvent()
+    - Calls eventService.reopenEvent(id, req.user.id, 'faculty')
+    - Returns the specific error message if the service throws one
+
+  archiveEvent()
+    - Calls eventService.archiveEvent(id, req.user.id, 'faculty')
+
+  notifyStudents()
+    - Calls eventService.getEventById() first to confirm ownership
+    - Calls emailService.notifyEligibleStudents(event)
+    - Returns { emailsSent: <count> }
+
+  getApplicationsForEvent()
+    - Confirms event ownership first
+    - Calls applicationService.getByEvent(eventId, statusFilter)
+
+  approveApplication()
+    - Calls applicationService.approveApplication(id, req.user.id)
+
+  rejectApplication()
+    - Calls applicationService.rejectApplication(id, req.user.id)
+
+----------------------------------------------------------------
+FILE: events/admin.routes.js
+----------------------------------------------------------------
+What it does:
+  Lists all event-related URL paths an admin can access.
+  Every route here requires authenticate + authorize('admin').
+
+URLs it holds:
+  GET    /api/admin/events                --> getAllEvents()
+  GET    /api/admin/events/:id            --> getEventById()
+  PUT    /api/admin/events/:id            --> updateEvent()
+  DELETE /api/admin/events/:id            --> deleteEvent()
+  PATCH  /api/admin/events/:id/archive    --> archiveEvent()
+  GET    /api/admin/applications          --> getAllApplications()
+
+----------------------------------------------------------------
+FILE: events/admin.controller.js
+----------------------------------------------------------------
+Functions it holds:
+  getAllEvents()
+    - Same as faculty version, no ownership restriction anywhere
+
+  getEventById()
+    - Calls eventService, no restriction
+
+  updateEvent()
+    - Calls eventService.updateEvent(id, req.body, req.user.id, 'admin')
+    - No ownership check performed inside the service for admin
+
+  deleteEvent()
+    - Calls eventService.hardDelete(id)
+    - This is an ADMIN-ONLY override — faculty can never hard-delete,
+      only archive
+
+  archiveEvent()
+    - Calls eventService.archiveEvent(id, req.user.id, 'admin')
+
+  getAllApplications()
+    - Reads status/eventId/studentId filters from req.query
+    - Calls applicationService.getAll(filters)
+
+
+================================================================
+MODULE 5: APPLICATIONS (core module — volunteer applications)
+================================================================
+Handles a student applying to an event, and faculty
+approving/rejecting. This is where the "one active application
+per student per event" and capacity-safe approval rules live.
+
+----------------------------------------------------------------
+FILE: applications/application.service.js
+----------------------------------------------------------------
+What it does:
+  All business logic for applications. Called by
+  student.controller.js (to apply) and faculty.controller.js /
+  admin.controller.js (to review).
+
+Functions it holds:
+  applyToEvent(eventId, student, data)
+    - Checks the event exists
+    - Calls eventService.isStudentEligibleForEvent() — throws 403
+      if not eligible
+    - Checks event.status is 'Open' — throws 400 otherwise
+    - Checks applicationDeadline > now — throws 400 otherwise
+    - Checks no existing Pending/Approved application already
+      exists for this student + event (the database's partial
+      unique index is the final safety net — if this check is
+      somehow bypassed, the DB throws a duplicate-key error, which
+      this function catches and converts into a friendly 409)
+    - Creates the VolunteerApplication with fullName, studentId,
+      semester, email copied (snapshotted) from the student's
+      profile at this exact moment
+    - Returns the created application
+
+  approveApplication(applicationId, facultyId)
+    - Loads the application, throws 404 if not found
+    - Confirms the parent event's createdBy matches facultyId,
+      throws 403 otherwise
+    - Confirms application.status is 'Pending', throws 400 otherwise
+    - Atomically increments the event's approvedCount ONLY IF it is
+      still below volunteerCapacity (single findOneAndUpdate with a
+      $expr condition comparing the two fields — this is what makes
+      it safe even if two approvals happen at the exact same moment)
+    - If the atomic update finds nothing to update (capacity was
+      already full), throws ApiError(409, "Event capacity already
+      reached") and leaves the application Pending
+    - If successful: sets application status to Approved, records
+      decisionBy and decisionAt
+    - Calls eventService.checkAndCloseIfFull(eventId)
+
+  rejectApplication(applicationId, facultyId)
+    - Same ownership + status checks as approveApplication
+    - Sets application status to Rejected, records decisionBy and
+      decisionAt
+    - No capacity logic needed here
+
+  getByStudent(studentId, statusFilter)
+    - Returns this student's own applications, optionally filtered
+
+  getByEvent(eventId, statusFilter)
+    - Returns all applications for one event, optionally filtered
+
+  getAll(filters)
+    - Admin-only — returns every application across every event
+
+  RULES THIS FILE FOLLOWS:
+    - A student can re-apply after rejection, as many times as the
+      event stays Open — Rejected applications never block a new one
+    - Only ONE Pending or Approved application may exist per
+      student + event pair at the same time (enforced by the
+      database's partial unique index, not just this code)
+    - Approval must never let approvedCount exceed volunteerCapacity,
+      even under concurrent requests
+
+----------------------------------------------------------------
+FILE: applications/application.validation.js
+----------------------------------------------------------------
+Schemas it holds:
+  applySchema
+    - previousExperience: optional string
+    - (fullName, studentId, semester, email are NEVER accepted from
+      the client here — they are always pulled from the
+      authenticated student's own profile server-side, so a student
+      cannot spoof someone else's details)
+
+  decisionSchema
+    - action: required, one of 'approve' or 'reject'
+      (used only if you choose to merge approve/reject into a
+      single endpoint later — current design uses two separate
+      routes instead, so this schema is optional)
+
+
+================================================================
+MODULE 6: NOTIFICATIONS (internal module, no routes)
+================================================================
+Sends the "Notify Students" announcement email. This module is
+used by faculty.controller.js. It does NOT have its own routes
+file — nobody calls it directly over HTTP except through the
+faculty events routes already listed in Module 4.
+
+----------------------------------------------------------------
+FILE: notifications/email.service.js
+----------------------------------------------------------------
+What it does:
+  Builds the announcement email and sends it to every eligible
+  student for an event.
+
+Functions it holds:
+  sendMail({ to, subject, html })
+    - Thin wrapper around a Nodemailer transport
+    - Configured from SMTP settings in .env
+
+  notifyEligibleStudents(event)
+    - Resolves the eligible student list directly from the Student
+      collection, based on event.eventLevel:
+        University   --> every student
+        Institute    --> students where instituteId matches
+        Department   --> students where departmentId is in
+                          event.targetDepartmentIds
+    - Builds the email content: event title, description, date,
+      deadline, capacity, and a call-to-action to apply
+    - Sends the email to every student in the resolved list
+    - Returns the count of emails sent (used for the faculty-facing
+      confirmation message)
+
+  RULES THIS FILE FOLLOWS:
+    - This is a MANUAL action only — never triggered automatically
+      when an event is created or edited
+    - Faculty can click "Notify Students" as many times as they
+      want, with no cooldown or one-time restriction
+    - No dedup logic needed, since a student belongs to exactly one
+      department (confirmed project rule)
+    - IMPORTANT: sending to potentially hundreds of students inside
+      one HTTP request risks a timeout. Two options to consider
+      before actually building this function:
+        (a) respond immediately and send emails in the background
+        (b) send a single email using BCC instead of one-per-student
+      Pick one before implementing — this is a decision, not
+      something to guess at while coding.
+
+
+================================================================
+MODULE 7: CLEANUP & SCHEDULING (internal module, no routes)
+================================================================
+Handles the automatic rules that need to run on a timer rather
+than in response to a request: closing events whose deadline has
+passed, and deleting old completed events.
+
+----------------------------------------------------------------
+FILE: cleanup/cleanup.service.js
+----------------------------------------------------------------
+Functions it holds:
+  deleteExpiredEvents()
+    - Finds every event where status is 'Completed',
+      isArchived is false, and eventDate is more than 1 year in
+      the past
+    - Deletes each such Event AND all its VolunteerApplication
+      documents
+    - Never touches an event where isArchived is true
+
+  RULES THIS FILE FOLLOWS:
+    - The 1-year clock is measured from eventDate, not from
+      whenever the status happened to flip to Completed — chosen
+      because eventDate is a fixed value that doesn't depend on
+      when a cron job happens to run
+    - Archived events are NEVER auto-deleted, regardless of age
+
+----------------------------------------------------------------
+FILE: scheduler/deadlineSweep.job.js
+----------------------------------------------------------------
+What it does:
+  Runs every 15 minutes.
+
+The function:
+  runDeadlineSweep()
+    - Finds all events with status 'Open' or 'Full' where
+      applicationDeadline is already in the past
+    - Calls eventService.checkAndCloseIfDeadlinePassed() on each one
+
+----------------------------------------------------------------
+FILE: scheduler/autoCleanup.job.js
+----------------------------------------------------------------
+What it does:
+  Runs once daily, at midnight.
+
+The function:
+  runAutoCleanup()
+    - Calls cleanupService.deleteExpiredEvents()
+
+----------------------------------------------------------------
+FILE: scheduler/index.js
+----------------------------------------------------------------
+What it does:
+  Registers both cron jobs using node-cron. Called once from
+  server.js after the server starts listening.
+
+The function:
+  initScheduler()
+    - cron.schedule('*/15 * * * *', runDeadlineSweep)
+    - cron.schedule('0 0 * * *', runAutoCleanup)
+
+
+================================================================
+SHARED FILES (used across every module)
+================================================================
+
+----------------------------------------------------------------
+FILE: middleware/authenticate.js
+----------------------------------------------------------------
+What it does:
+  Checks the JWT on every protected request.
+
+The function:
+  authenticate(req, res, next)
+    - Reads the Authorization: Bearer <token> header
+    - Verifies the JWT using the secret from .env
+    - On success: attaches req.user = { id, role } and calls next()
+    - On failure: throws ApiError(401, "Invalid or missing token")
+
+----------------------------------------------------------------
+FILE: middleware/authorize.js
+----------------------------------------------------------------
+What it does:
+  Checks the logged-in user's role is allowed to hit this route.
+
+The function:
+  authorize(...allowedRoles)
+    - A factory function — you call it like authorize('faculty')
+      or authorize('admin')
+    - Returns a middleware that checks req.user.role is included
+      in allowedRoles
+    - Throws ApiError(403, "You do not have permission") if not
+
+----------------------------------------------------------------
+FILE: middleware/validate.js
+----------------------------------------------------------------
+What it does:
+  Runs a Joi schema against the incoming request before the
+  controller ever sees it.
+
+The function:
+  validate(schema)
+    - A factory function — you call it like
+      validate(createEventSchema)
+    - Returns a middleware that checks req.body against the schema
+    - On failure: throws ApiError(400, "Validation failed", details)
+    - On success: calls next()
+
+----------------------------------------------------------------
+FILE: middleware/errorHandler.js
+----------------------------------------------------------------
+What it does:
+  The single centralized place all errors end up. Registered LAST
+  in app.js.
+
+The function:
+  errorHandler(err, req, res, next)
+    - If it is our custom ApiError: return err.statusCode and
+      err.message
+    - If it is an unexpected error: log the full error, return 500
+      with a generic message
+    - Never show stack traces to the client in production
+
+  Error response format:
+    {
+      success: false,
+      statusCode: 404,
+      message: "Event not found"
+    }
+
+----------------------------------------------------------------
+FILE: middleware/notFound.js
+----------------------------------------------------------------
+What it does:
+  Catches any request to a URL that doesn't match any route.
+
+The function:
+  notFound(req, res, next)
+    - Forwards ApiError(404, "Route not found") to errorHandler
+
+----------------------------------------------------------------
+FILE: utils/ApiError.js
+----------------------------------------------------------------
+What it does:
+  Custom error class used across the entire project. Instead of
+  throwing a plain Error, every service/controller throws this so
+  errorHandler always knows the right HTTP status to send back.
+
+The class:
+  ApiError extends Error
+    - new ApiError(statusCode, message, details = null)
+    - Example: throw new ApiError(404, "Event not found")
+
+----------------------------------------------------------------
+FILE: utils/ApiResponse.js
+----------------------------------------------------------------
+What it does:
+  Standardizes the shape of every successful response.
+
+The class:
+  ApiResponse
+    - new ApiResponse(statusCode, data, message = "Success")
+    - Produces: { success: true, statusCode, message, data }
+
+----------------------------------------------------------------
+FILE: utils/asyncHandler.js
+----------------------------------------------------------------
+What it does:
+  Wraps every async controller function so you never have to
+  write try/catch in each one individually.
+
+The function:
+  asyncHandler(fn)
+    - Runs fn(req, res, next)
+    - If it throws, automatically forwards the error to next(err)
+
+----------------------------------------------------------------
+FILE: utils/generateToken.js
+----------------------------------------------------------------
+What it does:
+  Signs a JWT for a logged-in user.
+
+The function:
+  generateToken(payload)
+    - payload is { id, role }
+    - Signs using the JWT secret and expiry from .env
+    - Returns the signed token string
+
+----------------------------------------------------------------
+FILE: config/db.js
+----------------------------------------------------------------
+What it does:
+  Connects to MongoDB.
+
+The function:
+  connectDB()
+    - Connects Mongoose to the URI from .env
+    - Logs success or failure
+    - If it fails, exits the process — no point running a server
+      that can't reach its database
+
+----------------------------------------------------------------
+FILE: config/env.js
+----------------------------------------------------------------
+What it does:
+  Loads and checks every environment variable in one place, so
+  nothing else in the codebase touches process.env directly.
+
+What it does in order:
+  1. Reads PORT, MONGO_URI, JWT_SECRET, JWT_EXPIRY, SMTP settings,
+     ADMIN_SEED_SECRET, CLIENT_URL from .env
+  2. Throws immediately at startup if any required value is missing
+     (fail fast, instead of a confusing crash mid-request later)
+  3. Exports one config object used everywhere else
+
+
+================================================================
+THE MAIN FILE: src/app.js
+================================================================
+What it does:
+  Builds the Express app (but does not start it — that's
+  server.js's job, kept separate to make testing easier later).
+
+What it does in order:
+  1. Creates the Express app
+  2. Applies global middleware:
+       cors() (allow the frontend origin)
+       express.json() (so Express can read JSON request bodies)
+  3. Mounts all route modules under /api
+  4. Applies notFound middleware
+  5. Applies errorHandler middleware LAST
+
+  IMPORTANT: errorHandler must ALWAYS be the last middleware
+  registered. If you put it before the routes, it will never
+  catch anything.
+
+================================================================
+THE MAIN FILE: src/server.js
+================================================================
+What it does in order:
+  1. Calls connectDB()
+  2. Starts the Express app listening on PORT from .env
+  3. Calls initScheduler() to start the two cron jobs
+
+
+================================================================
+QUICK REFERENCE: Which file to edit for common tasks
+================================================================
+
+  I need to add a new URL/endpoint
+    --> Edit the module's routes.js file
+
+  I need to change what an API returns
+    --> Edit the module's controller.js file
+
+  I need to change a business rule (capacity, deadline, eligibility)
+    --> Edit events/event.service.js or applications/application.service.js
+
+  I need to change a validation rule
+    --> Edit the module's validation.js file
+
+  I need to change the "Notify Students" email text
+    --> Edit notifications/email.service.js
+
+  I need to change when the cron jobs run
+    --> Edit scheduler/index.js
+
+  I need to change how long until events auto-delete
+    --> Edit cleanup/cleanup.service.js
+
+  I need to change the JWT token expiry
+    --> Edit .env file, change JWT_EXPIRY
+
+  I need to add a new role-based restriction to a route
+    --> Edit middleware/authorize.js usage in that route file
+
+
+================================================================
+END OF DOCUMENT
+================================================================
