@@ -1,4 +1,6 @@
 const Event = require('../models/event.model');
+const Student = require('../models/student.model');
+const VolunteerApplication = require('../models/volunteerapplication.model');
 const ApiError = require('../utils/ApiError');
 
 function isStudentEligibleForEvent(student , event) {
@@ -101,9 +103,9 @@ async function getEligibleEventsForStudent(student, filters = {}) {
     }
 }
 
-async function getEventForStudent(eventId , student) {
+async function getEventForStudent(eventId , studentId) {
     const event = await Event.findById(eventId);
-
+    const student = await Student.findById(studentId);
     if(!event){
         throw new ApiError(404 , 'Event not found');
     }
@@ -130,6 +132,10 @@ async function getAllEventsForFacultyOrAdmin(filters = {}) {
     query.status = filters.status;
   }
 
+  if (filters.isArchived) {
+    query.isArchived = true;
+  }
+
   // --- institute filter (matches events targeting this institute) ---
   if (filters.institute) {
     query.targetInstituteIds = filters.institute;
@@ -142,7 +148,6 @@ async function getAllEventsForFacultyOrAdmin(filters = {}) {
 
   // --- date filter (single date OR range, on eventDate) ---
   if (filters.date) {
-    // exact day match: from midnight to next midnight
     const dayStart = new Date(filters.date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
@@ -160,11 +165,17 @@ async function getAllEventsForFacultyOrAdmin(filters = {}) {
     query.eventDate = eventDateFilter;
   }
 
+  // --- search text (title or description, case-insensitive) ---
+  if (filters.search) {
+    const searchRegex = new RegExp(filters.search, 'i');
+    query.$or = [{ title: searchRegex }, { description: searchRegex }];
+  }
+
   try {
     const events = await Event.find(query).sort({ eventDate: 1 });
     return events;
   } catch (error) {
-    throw new ApiError(500 , 'Failed to fetch events: ' + error.message);
+    throw new ApiError(500, 'Failed to fetch events: ' + error.message);
   }
 }
 
@@ -252,7 +263,175 @@ async function updateEvent(eventId, data, actorId, actorRole) {
   }
 }
 
+async function reopenEvent(eventId , actorId ,actorRole){
+  const event = await Event.findById(eventId);
 
+  if(!event){
+    throw new ApiError(404 , 'Event not found');
+  }
+
+  if(actorRole.toString() === 'faculty'){
+    if(actorId.toString() !== event.createdBy.toString()){
+      throw new ApiError(403 , 'You are not authorized to reopen this event');
+    }
+  }
+
+  if(event.applicationDeadline < new Date()){
+    throw new ApiError(400, 'Cannot reopen: application deadline has already passed');
+  }
+
+  if(event.approvedCount >= event.volunteerCapacity){
+    throw new ApiError(400, 'Cannot reopen: volunteer capacity already reached');
+  }
+
+  event.status = 'Open';
+  
+  try {
+    return await event.save();
+  } catch (error) {
+    throw new ApiError(500 , 'Failed to reopen the event: ' + error.message);
+  }
+}
+
+async function archiveEvent(eventId , actorId , actorRole) {
+  
+  const event = await Event.findById(eventId);
+
+  if(!event){
+    throw new ApiError(404 , 'Event not found');
+  }
+
+  if(actorRole.toString() === 'faculty'){
+    if(actorId.toString() !== event.createdBy.toString()){
+      throw new ApiError(403 , 'You are not authorized to archive this event');
+    }
+  }
+
+  event.isArchived = true;
+
+  try {
+    return await event.save();
+  } catch (error) {
+    throw new ApiError(500 , 'Failed to archive event: ' + error.message);
+  }
+}
+
+async function checkAndCloseIfDeadlinePassed(eventId){
+    const event = await Event.findById(eventId);
+
+    if(!event){
+      throw new ApiError(404 , 'Event not found');
+    }
+
+    const deadlinePassed = event.applicationDeadline < new Date();
+
+    if(!deadlinePassed){
+      return event;
+    }
+
+    if(event.status !== 'Open'){
+      return event;
+    }
+
+    event.status = 'ApplicationClosed';
+
+    try {
+      await event.save();
+
+      await VolunteerApplication.updateMany(
+        {eventId : event._id , status : 'Pending'},
+        {
+          $set : {
+            status : 'Rejected',
+            decisionReason : 'auto-rejected: deadline passed'
+          }
+        }
+      );
+
+      return event;
+    } catch (error) {
+      throw new ApiError(500, 'Failed to close event on deadline: ' + error.message);
+    }
+}
+
+async function checkAndCloseIfFull(eventId) {
+  const event = await Event.findById(eventId);
+
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
+
+  const isFull = event.approvedCount >= event.volunteerCapacity;
+
+  if (!isFull) {
+    return event;
+  }
+
+  // Only 'Open' events should transition on capacity being reached.
+  // 'ApplicationClosed' and 'Completed' are already terminal/later states.
+  if (event.status !== 'Open') {
+    return event;
+  }
+
+  event.status = 'ApplicationClosed'; // 'Full' folded into this, per updated enum
+
+  try {
+    await event.save();
+
+    await VolunteerApplication.updateMany(
+      { eventId: event._id, status: 'Pending' },
+      {
+        $set: {
+          status: 'Rejected',
+          decisionReason: 'auto-rejected: capacity reached'
+        }
+      }
+    );
+
+    return event;
+  } catch (error) {
+    throw new ApiError(500, 'Failed to close event on capacity reached: ' + error.message);
+  }
+}
+
+async function markEventCompletedIfEventDatePassed(eventId) {
+  const event = await Event.findById(eventId);
+
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
+
+  const eventDatePassed = event.eventDate < new Date();
+
+  if (!eventDatePassed) {
+    return event;
+  }
+
+  // Only events that have already gone through ApplicationClosed
+  // are eligible to complete — guarantees Pending apps were already
+  // resolved on the way here.
+  if (event.status !== 'ApplicationClosed') {
+    return event;
+  }
+
+  event.status = 'Completed';
+
+  try {
+    return await event.save();
+  } catch (err) {
+    throw new ApiError(500, 'Failed to mark event completed: ' + err.message);
+  }
+}
+
+async function getEventById(eventId) {
+  const event = await Event.findById(eventId);
+
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
+
+  return event;
+}
 
 module.exports = { 
     isStudentEligibleForEvent,
@@ -260,5 +439,11 @@ module.exports = {
     getEligibleEventsForStudent,
     getEventForStudent,
     createEvent,
-    updateEvent
- }; 
+    updateEvent,
+    reopenEvent,
+    archiveEvent,
+    checkAndCloseIfDeadlinePassed,
+    checkAndCloseIfFull,
+    markEventCompletedIfEventDatePassed,
+    getEventById
+ };

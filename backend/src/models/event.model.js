@@ -53,7 +53,7 @@ const eventSchema = new Schema({
 
   status: {
     type: String,
-    enum: ['Open', 'Full', 'ApplicationClosed', 'Completed', 'Archived'],
+    enum: ['Open', 'ApplicationClosed', 'Completed'],
     default: 'Open'
   },
   isArchived: {
