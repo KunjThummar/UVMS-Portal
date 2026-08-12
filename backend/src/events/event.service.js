@@ -1,6 +1,6 @@
 const Event = require('../models/event.model');
 const Student = require('../models/student.model');
-const VolunteerApplication = require('../models/volunteerapplication.model');
+const VolunteerApplication = require('../models/volunteerApplication.model');
 const ApiError = require('../utils/ApiError');
 
 function isStudentEligibleForEvent(student , event) {
@@ -225,7 +225,7 @@ async function updateEvent(eventId, data, actorId, actorRole) {
     throw new ApiError(404, 'Event not found');
   }
 
-  if (actorRole === 'faculty') {
+  if (actorRole.toString() === 'faculty') {
     if (event.createdBy.toString() !== actorId.toString()) {
       throw new ApiError(403, 'You are not authorized to update this event');
     }
@@ -433,6 +433,40 @@ async function getEventById(eventId) {
   return event;
 }
 
+async function hardDelete(id) {
+  // Permanently removes the event and its DB row — irreversible.
+  // Unlike archive(), this does not set a status flag; the record is gone.
+  const deletedEvent = await Event.findByIdAndDelete(id);
+  return deletedEvent;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = { 
     isStudentEligibleForEvent,
     getAllEventsForFacultyOrAdmin,
@@ -445,5 +479,6 @@ module.exports = {
     checkAndCloseIfDeadlinePassed,
     checkAndCloseIfFull,
     markEventCompletedIfEventDatePassed,
-    getEventById
+    getEventById,
+    hardDelete
  };

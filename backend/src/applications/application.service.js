@@ -1,4 +1,4 @@
-const { VolunteerApplication } = require("../models/volunteerApplication.model");
+const  VolunteerApplication  = require("../models/volunteerApplication.model");
 const { Event } = require("../models/event.model");
 const Student = require("../models/student.model");
 const eventService = require("../events/event.service");
