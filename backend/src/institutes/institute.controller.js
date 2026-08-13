@@ -1,5 +1,6 @@
 const instituteService = require('./institute.service');
 const {validateInstitute} = require('./institute.validation')
+
 async function listInstitutes(req , res){
     try {
         const institutes = await instituteService.getAll();
