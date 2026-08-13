@@ -1,5 +1,5 @@
-const VolunteerApplication = require("../models/volunteerapplication.model");
-const Event = require("../models/event.model");
+const  VolunteerApplication  = require("../models/volunteerApplication.model");
+const { Event } = require("../models/event.model");
 const Student = require("../models/student.model");
 const eventService = require("../events/event.service");
 const ApiError = require("../utils/ApiError");
@@ -26,8 +26,8 @@ const applyToEvent = async (eventId, studentId, data) => {
 
     // Check Student Eligibility
     const eligible = await eventService.isStudentEligibleForEvent(
-        student,
-        event
+        event,
+        student
     );
 
     if (!eligible) {

@@ -80,4 +80,4 @@ volunteerApplicationSchema.index(
   }
 );
 
-module.exports = mongoose.model('VolunteerApplication', volunteerApplicationSchema);
+module.exports = mongoose.model('VolunteerApplication', volunteerApplicationSchema);; 
