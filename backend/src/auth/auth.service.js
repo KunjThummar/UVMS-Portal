@@ -87,7 +87,7 @@ const loginStudent = async (email, password) => {
     }
 
     // Generate JWT Token
-    const token = generateToken(student._id, "Student");
+    const token = generateToken(student._id, "student");
 
     // Remove password before sending response
     const studentProfile = student.toObject();
@@ -167,7 +167,7 @@ const loginFaculty = async (email, password) => {
     }
 
     // Generate JWT Token
-    const token = generateToken(faculty._id, "Faculty");
+    const token = generateToken(faculty._id, "faculty");
 
     // Remove password before sending response
     const facultyProfile = faculty.toObject();
@@ -191,8 +191,8 @@ const loginAdmin = async (email, password) => {
         throw new ApiError(401, "Invalid email or password.");
     }
 
-    // Check if account is active
-    if (!admin.isActive) {
+    // Check if account is active (treat missing field as active for backwards compatibility)
+    if (admin.isActive === false) {
         throw new ApiError(403, "Your account has been deactivated.");
     }
 
@@ -207,7 +207,7 @@ const loginAdmin = async (email, password) => {
     }
 
     // Generate JWT Token
-    const token = generateToken(admin._id, "Admin");
+    const token = generateToken(admin._id, "admin");
 
     // Remove password before sending response
     const adminProfile = admin.toObject();
@@ -225,17 +225,18 @@ const loginAdmin = async (email, password) => {
 
 const getProfileByRole = async (id, role) => {
     let profile;
+    const normalizedRole = role?.toLowerCase();
 
-    switch (role) {
-        case "Student":
+    switch (normalizedRole) {
+        case "student":
             profile = await Student.findById(id).select("-passwordHash");
             break;
 
-        case "Faculty":
+        case "faculty":
             profile = await Faculty.findById(id).select("-passwordHash");
             break;
 
-        case "Admin":
+        case "admin":
             profile = await Administrator.findById(id).select("-passwordHash");
             break;
 

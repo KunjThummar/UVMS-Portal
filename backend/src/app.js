@@ -8,6 +8,7 @@ const authRoutes = require('./auth/auth.routes');
 const instituteRoutes = require('./institutes/institute.routes');
 const departmentRouter = require('./departments/department.routes');
 const applicationRoutes = require("./applications/application.routes");
+const studentRoutes = require("./students/student.routes");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/institutes', instituteRoutes);
 app.use('/api/departments', departmentRouter);
 app.use("/api/applications", applicationRoutes);
+app.use("/api/student", studentRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

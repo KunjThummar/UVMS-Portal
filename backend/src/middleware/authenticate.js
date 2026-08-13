@@ -20,7 +20,7 @@ const authenticate = (req, res, next) => {
 
         req.user = {
             id: decoded.id,
-            role: decoded.role
+            role: decoded.role?.toLowerCase()
         };
 
         next();         //this next() function is used to pass control to the next middleware function in the stack. 
