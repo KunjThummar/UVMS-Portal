@@ -1,6 +1,6 @@
 const eventService = require('../events/event.service');
 const applicationService = require('../applications/application.service');
-const {validateCreateEvent , validateUpdateEvent} = require('../events/event.validation');
+const { validateCreateEvent, validateUpdateEvent } = require('../events/event.validation');
 
 async function getAllEvents(req, res) {
   const filters = req.query;
@@ -94,33 +94,34 @@ async function getApplicationsForEvent(req, res) {
   }
 }
 
-async function approveApplication(req , res){
+async function approveApplication(req, res) {
   try {
-    const application = applicationService.approveApplication(req.params.applicationId , req.userId);
-    return res.status(200).json({success : true , data : application});
+    const application = applicationService.approveApplication(req.params.applicationId, req.userId);
+    return res.status(200).json({ success: true, data: application });
   } catch (error) {
     const statusCode = error.statusCode || 500;
-    return res.status(statusCode).json({success : false , message : error.message});
+    return res.status(statusCode).json({ success: false, message: error.message });
   }
 }
 
-async function rejectApplication(req , res){
+async function rejectApplication(req, res) {
   try {
-    const application = applicationService.rejectApplication(req.params.applicationId , req.userId);
-    return res.status(200).json({success : true , data : application});
+    const application = applicationService.rejectApplication(req.params.applicationId, req.userId);
+    return res.status(200).json({ success: true, data: application });
   } catch (error) {
     const statusCode = error.statusCode || 500;
-    return res.status(statusCode).json({success : false , message : error.message});
+    return res.status(statusCode).json({ success: false, message: error.message });
   }
 }
 
-module.exports = { getAllEvents,
-                   getEventById, 
-                   createEvent, 
-                   updateEvent, 
-                   reopenEvent, 
-                   archiveEvent,
-                   getApplicationsForEvent,
-                   approveApplication,
-                   rejectApplication
-                  };
+module.exports = {
+  getAllEvents,
+  getEventById,
+  createEvent,
+  updateEvent,
+  reopenEvent,
+  archiveEvent,
+  getApplicationsForEvent,
+  approveApplication,
+  rejectApplication
+};

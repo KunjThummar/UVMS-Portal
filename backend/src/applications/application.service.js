@@ -26,8 +26,8 @@ const applyToEvent = async (eventId, studentId, data) => {
 
     // Check Student Eligibility
     const eligible = await eventService.isStudentEligibleForEvent(
-        event,
-        student
+        student,
+        event
     );
 
     if (!eligible) {

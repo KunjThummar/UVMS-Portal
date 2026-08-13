@@ -3,120 +3,120 @@ const Student = require('../models/student.model');
 const VolunteerApplication = require('../models/volunteerApplication.model');
 const ApiError = require('../utils/ApiError');
 
-function isStudentEligibleForEvent(student , event) {
-    switch(event.eventLevel){
-        case 'University' :
-            return true;
+function isStudentEligibleForEvent(student, event) {
+  switch (event.eventLevel) {
+    case 'University':
+      return true;
 
-        case 'Institute' :
-            return(!!student.instituteId &&
-                Array.isArray(event.targetInstituteIds) &&
-                event.targetInstituteIds.some(
-                    (instId) => instId.toString() === student.instituteId.toString()
-                )
-            );
+    case 'Institute':
+      return (!!student.instituteId &&
+        Array.isArray(event.targetInstituteIds) &&
+        event.targetInstituteIds.some(
+          (instId) => instId.toString() === student.instituteId.toString()
+        )
+      );
 
-        case 'Department' :
-            return(!!student.departmentId &&
-                Array.isArray(event.targetDepartmentIds) &&
-                event.targetDepartmentIds.some(
-                    (deptId) => deptId.toString() === student.departmentId.toString()
-                )
-            );
-    } 
+    case 'Department':
+      return (!!student.departmentId &&
+        Array.isArray(event.targetDepartmentIds) &&
+        event.targetDepartmentIds.some(
+          (deptId) => deptId.toString() === student.departmentId.toString()
+        )
+      );
+  }
 }
 
 async function getEligibleEventsForStudent(student, filters = {}) {
 
-    const eligibilityOr = [
-        { eventLevel: 'University' },
-        {
-            eventLevel: 'Institute',
-            targetInstituteIds: student.instituteId
-        },
-        {
-            eventLevel: 'Department',
-            targetDepartmentIds: student.departmentId
-        }
-    ];
+  const eligibilityOr = [
+    { eventLevel: 'University' },
+    {
+      eventLevel: 'Institute',
+      targetInstituteIds: student.instituteId
+    },
+    {
+      eventLevel: 'Department',
+      targetDepartmentIds: student.departmentId
+    }
+  ];
 
-    const andConditions = [{ $or: eligibilityOr }];
+  const andConditions = [{ $or: eligibilityOr }];
 
-    // Status filter
-    if (filters.status) {
-        andConditions.push({
-            status: filters.status
-        });
+  // Status filter
+  if (filters.status) {
+    andConditions.push({
+      status: filters.status
+    });
+  }
+
+  // Date filter
+  if (filters.startDate || filters.endDate) {
+    const eventDateFilters = {};
+
+    if (filters.startDate) {
+      eventDateFilters.$gte = new Date(filters.startDate);
     }
 
-    // Date filter
-    if (filters.startDate || filters.endDate) {
-        const eventDateFilters = {};
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
 
-        if (filters.startDate) {
-            eventDateFilters.$gte = new Date(filters.startDate);
-        }
-
-        if (filters.endDate) {
-            const endDate = new Date(filters.endDate);
-            endDate.setDate(endDate.getDate() + 1);
-
-            eventDateFilters.$lt = endDate;
-        }
-
-        andConditions.push({
-            eventDate: eventDateFilters
-        });
+      eventDateFilters.$lt = endDate;
     }
 
-    // Search filter
-    if (filters.search) {
-        const searchRegex = new RegExp(filters.search, 'i');
+    andConditions.push({
+      eventDate: eventDateFilters
+    });
+  }
 
-        andConditions.push({
-            $or: [
-                { title: searchRegex },
-                { description: searchRegex }
-            ]
-        });
-    }
+  // Search filter
+  if (filters.search) {
+    const searchRegex = new RegExp(filters.search, 'i');
 
-    // Archived filter
-    if (!filters.includeArchived) {
-        andConditions.push({
-            isArchived: false
-        });
-    }
+    andConditions.push({
+      $or: [
+        { title: searchRegex },
+        { description: searchRegex }
+      ]
+    });
+  }
 
-    const query = {
-        $and: andConditions
-    };
+  // Archived filter
+  if (!filters.includeArchived) {
+    andConditions.push({
+      isArchived: false
+    });
+  }
 
-    try {
-        const events = await Event.find(query)
-            .sort({ eventDate: 1 });
+  const query = {
+    $and: andConditions
+  };
 
-        return events;
+  try {
+    const events = await Event.find(query)
+      .sort({ eventDate: 1 });
 
-    } catch (error) {
-        throw new ApiError(500 ,'Failed to fetch eligible events: ' + error.message);
-    }
+    return events;
+
+  } catch (error) {
+    throw new ApiError(500, 'Failed to fetch eligible events: ' + error.message);
+  }
 }
 
-async function getEventForStudent(eventId , studentId) {
-    const event = await Event.findById(eventId);
-    const student = await Student.findById(studentId);
-    if(!event){
-        throw new ApiError(404 , 'Event not found');
-    }
+async function getEventForStudent(eventId, studentId) {
+  const event = await Event.findById(eventId);
+  const student = await Student.findById(studentId);
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
 
-    const eligible = isStudentEligibleForEvent(student , event);
+  const eligible = isStudentEligibleForEvent(student, event);
 
-    if(!eligible){
-        throw new ApiError(403 , 'You are not eligible for this event');
-    }
+  if (!eligible) {
+    throw new ApiError(403, 'You are not eligible for this event');
+  }
 
-    return event;
+  return event;
 }
 
 async function getAllEventsForFacultyOrAdmin(filters = {}) {
@@ -263,47 +263,47 @@ async function updateEvent(eventId, data, actorId, actorRole) {
   }
 }
 
-async function reopenEvent(eventId , actorId ,actorRole){
+async function reopenEvent(eventId, actorId, actorRole) {
   const event = await Event.findById(eventId);
 
-  if(!event){
-    throw new ApiError(404 , 'Event not found');
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
   }
 
-  if(actorRole.toString() === 'faculty'){
-    if(actorId.toString() !== event.createdBy.toString()){
-      throw new ApiError(403 , 'You are not authorized to reopen this event');
+  if (actorRole.toString() === 'faculty') {
+    if (actorId.toString() !== event.createdBy.toString()) {
+      throw new ApiError(403, 'You are not authorized to reopen this event');
     }
   }
 
-  if(event.applicationDeadline < new Date()){
+  if (event.applicationDeadline < new Date()) {
     throw new ApiError(400, 'Cannot reopen: application deadline has already passed');
   }
 
-  if(event.approvedCount >= event.volunteerCapacity){
+  if (event.approvedCount >= event.volunteerCapacity) {
     throw new ApiError(400, 'Cannot reopen: volunteer capacity already reached');
   }
 
   event.status = 'Open';
-  
+
   try {
     return await event.save();
   } catch (error) {
-    throw new ApiError(500 , 'Failed to reopen the event: ' + error.message);
+    throw new ApiError(500, 'Failed to reopen the event: ' + error.message);
   }
 }
 
-async function archiveEvent(eventId , actorId , actorRole) {
-  
+async function archiveEvent(eventId, actorId, actorRole) {
+
   const event = await Event.findById(eventId);
 
-  if(!event){
-    throw new ApiError(404 , 'Event not found');
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
   }
 
-  if(actorRole.toString() === 'faculty'){
-    if(actorId.toString() !== event.createdBy.toString()){
-      throw new ApiError(403 , 'You are not authorized to archive this event');
+  if (actorRole.toString() === 'faculty') {
+    if (actorId.toString() !== event.createdBy.toString()) {
+      throw new ApiError(403, 'You are not authorized to archive this event');
     }
   }
 
@@ -312,46 +312,46 @@ async function archiveEvent(eventId , actorId , actorRole) {
   try {
     return await event.save();
   } catch (error) {
-    throw new ApiError(500 , 'Failed to archive event: ' + error.message);
+    throw new ApiError(500, 'Failed to archive event: ' + error.message);
   }
 }
 
-async function checkAndCloseIfDeadlinePassed(eventId){
-    const event = await Event.findById(eventId);
+async function checkAndCloseIfDeadlinePassed(eventId) {
+  const event = await Event.findById(eventId);
 
-    if(!event){
-      throw new ApiError(404 , 'Event not found');
-    }
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
 
-    const deadlinePassed = event.applicationDeadline < new Date();
+  const deadlinePassed = event.applicationDeadline < new Date();
 
-    if(!deadlinePassed){
-      return event;
-    }
+  if (!deadlinePassed) {
+    return event;
+  }
 
-    if(event.status !== 'Open'){
-      return event;
-    }
+  if (event.status !== 'Open') {
+    return event;
+  }
 
-    event.status = 'ApplicationClosed';
+  event.status = 'ApplicationClosed';
 
-    try {
-      await event.save();
+  try {
+    await event.save();
 
-      await VolunteerApplication.updateMany(
-        {eventId : event._id , status : 'Pending'},
-        {
-          $set : {
-            status : 'Rejected',
-            decisionReason : 'auto-rejected: deadline passed'
-          }
+    await VolunteerApplication.updateMany(
+      { eventId: event._id, status: 'Pending' },
+      {
+        $set: {
+          status: 'Rejected',
+          decisionReason: 'auto-rejected: deadline passed'
         }
-      );
+      }
+    );
 
-      return event;
-    } catch (error) {
-      throw new ApiError(500, 'Failed to close event on deadline: ' + error.message);
-    }
+    return event;
+  } catch (error) {
+    throw new ApiError(500, 'Failed to close event on deadline: ' + error.message);
+  }
 }
 
 async function checkAndCloseIfFull(eventId) {
@@ -440,45 +440,18 @@ async function hardDelete(id) {
   return deletedEvent;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-module.exports = { 
-    isStudentEligibleForEvent,
-    getAllEventsForFacultyOrAdmin,
-    getEligibleEventsForStudent,
-    getEventForStudent,
-    createEvent,
-    updateEvent,
-    reopenEvent,
-    archiveEvent,
-    checkAndCloseIfDeadlinePassed,
-    checkAndCloseIfFull,
-    markEventCompletedIfEventDatePassed,
-    getEventById,
-    hardDelete
- };
+module.exports = {
+  isStudentEligibleForEvent,
+  getAllEventsForFacultyOrAdmin,
+  getEligibleEventsForStudent,
+  getEventForStudent,
+  createEvent,
+  updateEvent,
+  reopenEvent,
+  archiveEvent,
+  checkAndCloseIfDeadlinePassed,
+  checkAndCloseIfFull,
+  markEventCompletedIfEventDatePassed,
+  getEventById,
+  hardDelete
+};
