@@ -14,7 +14,8 @@ const {
 const {
   getApplicationsForEvent,
   approveApplication,
-  rejectApplication 
+  rejectApplication,
+  notifyStudents
 } = require('../events/faculty.controller');
 
 const authenticate = require('../middleware/authenticate');
@@ -28,7 +29,7 @@ router.post('/events', createEvent);
 router.put('/events/:id', updateEvent);
 router.patch('/events/:id/reopen', reopenEvent);
 router.patch('/events/:id/archive', archiveEvent);
-// router.post('/events/:id/notify', notifyStudents);
+router.post('/events/:id/notify', notifyStudents);
 router.get('/events/:id/applications', getApplicationsForEvent);
 router.patch('/applications/:id/approve', approveApplication);
 router.patch('/applications/:id/reject', rejectApplication);

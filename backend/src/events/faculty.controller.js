@@ -1,6 +1,8 @@
 const eventService = require('../events/event.service');
 const applicationService = require('../applications/application.service');
+const { notifyEligibleStudents } = require('../notifications/email.service');
 const { validateCreateEvent, validateUpdateEvent } = require('../events/event.validation');
+const ApiError = require('../utils/ApiError');
 
 async function getAllEvents(req, res) {
   const filters = req.query;
@@ -114,6 +116,27 @@ async function rejectApplication(req, res) {
   }
 }
 
+async function notifyStudents(req, res) {
+  try {
+    const event = await eventService.getEventById(req.params.id);
+
+    if (event.createdBy.toString() !== req.user.id.toString()) {
+      throw new ApiError(403, 'You are not authorized to notify students for this event');
+    }
+
+    const sentCount = await notifyEligibleStudents(event);
+
+    return res.status(200).json({
+      success: true,
+      message: `Notification email sent to ${sentCount} eligible student(s).`,
+      data: { sentCount }
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -123,5 +146,6 @@ module.exports = {
   archiveEvent,
   getApplicationsForEvent,
   approveApplication,
-  rejectApplication
+  rejectApplication,
+  notifyStudents
 };

@@ -20,7 +20,8 @@
     "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.24.2",
-    "node-cron": "^4.6.0"
+    "node-cron": "^4.6.0",
+    "nodemailer": "^9.0.5"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",

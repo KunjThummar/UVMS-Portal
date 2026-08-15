@@ -36,11 +36,12 @@ const eventSchema = new Schema({
   },
 
   // populated only if eventLevel === 'Institute'
-  targetInstituteId: {
-    type: Schema.Types.ObjectId,  
-    ref: 'Institute',
-    default: null
-  },
+  targetInstituteIds: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Institute'
+    }
+  ],
 
   // populated only if eventLevel === 'Department'
   // supports multiple departments, possibly across different institutes
@@ -74,7 +75,7 @@ eventSchema.index({ createdBy: 1 });
 eventSchema.index({ eventLevel: 1 });
 eventSchema.index({ status: 1 });
 eventSchema.index({ applicationDeadline: 1 });
-eventSchema.index({ targetInstituteId: 1 });
+eventSchema.index({ targetInstituteIds: 1 });
 eventSchema.index({ eventDate: 1 });
 eventSchema.index({ targetDepartmentIds: 1 }); // multikey index
 
