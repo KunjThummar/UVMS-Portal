@@ -2,7 +2,9 @@ const Joi = require("joi");    //checks whether the data is valid or not before 
 
 const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 
-const UNIVERSITY_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.edu\.in$/;
+const UNIVERSITY_STUDENT_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.edu\.in$/;
+
+const UNIVERSITY_FACULTY_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.ac\.in$/;
 
 const studentRegisterSchema = Joi.object({
     fullName: Joi.string().trim().required(),
@@ -12,11 +14,11 @@ const studentRegisterSchema = Joi.object({
     email: Joi.string()
         .trim()
         .lowercase()
-        .pattern(UNIVERSITY_EMAIL_REGEX)
+        .pattern(UNIVERSITY_STUDENT_EMAIL_REGEX)
         .required()
         .messages({
             "string.pattern.base":
-                "Only official university email is allowed.",
+                "Only official university student email is allowed.",
         }),
 
     password: Joi.string().min(6).required(),
@@ -31,7 +33,15 @@ const studentRegisterSchema = Joi.object({
 const facultyRegisterSchema = Joi.object({
     fullName: Joi.string().trim().required(),
 
-    email: Joi.string().email().trim().lowercase().required(),
+    email: Joi.string()
+        .trim()
+        .lowercase()
+        .pattern(UNIVERSITY_FACULTY_EMAIL_REGEX)
+        .required()
+        .messages({
+            "string.pattern.base":
+                "Only official university faculty email is allowed.",
+        }),
 
     password: Joi.string().min(6).required(),
 
