@@ -8,17 +8,12 @@ const {
   deleteInstitute
 } = require('../institutes/institute.controller');
 
-//const { authMiddleware } = require('../middleware/authMiddleware');
-//const { requireAdmin } = require('../middleware/requireAdmin');
-
-// router.get('/', listInstitutes);
-// router.post('/', authMiddleware, requireAdmin, createInstitute);
-// router.put('/:id', authMiddleware, requireAdmin, updateInstitute);
-// router.delete('/:id', authMiddleware, requireAdmin, deleteInstitute);
+const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
 
 router.get('/', listInstitutes);
-router.post('/', createInstitute);
-router.put('/:id', updateInstitute);
-router.delete('/:id', deleteInstitute);
+router.post('/', authenticate, authorize('admin'), createInstitute);
+router.put('/:id', authenticate, authorize('admin'), updateInstitute);
+router.delete('/:id', authenticate, authorize('admin'), deleteInstitute);
 
 module.exports = router;

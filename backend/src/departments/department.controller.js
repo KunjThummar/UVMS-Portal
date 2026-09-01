@@ -40,8 +40,8 @@ async function updateDepartment(req, res) {
     }
 
     return res.status(200).json({ success: true, data: department });
-  } catch (err) {
-    return res.status(400).json({ success: false, message: err.message });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
   }
 }
 
@@ -56,7 +56,7 @@ async function deleteDepartment(req, res) {
     return res.status(200).json({ success: true, message: 'Department deleted successfully' });
   } catch (error) {
     const statusCode = error.statusCode || 500;
-    return res.status(statusCode).json({ success: false, message: err.message });
+    return res.status(statusCode).json({ success: false, message: error.message });
   }
 }
 

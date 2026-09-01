@@ -35,8 +35,10 @@ const getEligibleEvents = async (req, res) => {
             search
         } = req.query;
 
+        const student = await studentService.getProfile(req.user.id);
+
         const events = await eventService.getEligibleEventsForStudent(
-            req.user.id,
+            student,
             {
                 status,
                 dateFrom,

@@ -50,22 +50,22 @@ async function getEligibleEventsForStudent(student, filters = {}) {
   }
 
   // Date filter
-  if (filters.startDate || filters.endDate) {
+   if (filters.dateFrom || filters.dateTo) {
     const eventDateFilters = {};
 
-    if (filters.startDate) {
-      eventDateFilters.$gte = new Date(filters.startDate);
+    if (filters.dateFrom) {
+      eventDateFilters.$gte = new Date(filters.dateFrom);
     }
 
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
+    if (filters.dateTo) {
+      const endDate = new Date(filters.dateTo);
       endDate.setDate(endDate.getDate() + 1);
 
       eventDateFilters.$lt = endDate;
     }
 
     andConditions.push({
-      eventDate: eventDateFilters
+      eventDate: eventDateFilters,
     });
   }
 
