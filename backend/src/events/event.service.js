@@ -3,6 +3,9 @@ const Student = require('../models/student.model');
 const VolunteerApplication = require('../models/volunteerApplication.model');
 const ApiError = require('../utils/ApiError');
 
+const escapeRegex = (value) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 function isStudentEligibleForEvent(student, event) {
   switch (event.eventLevel) {
     case 'University':
@@ -71,7 +74,7 @@ async function getEligibleEventsForStudent(student, filters = {}) {
 
   // Search filter
   if (filters.search) {
-    const searchRegex = new RegExp(filters.search, 'i');
+    const searchRegex = new RegExp(escapeRegex(filters.search), 'i');
 
     andConditions.push({
       $or: [
