@@ -9,7 +9,9 @@ const instituteRoutes = require('./institutes/institute.routes');
 const departmentRouter = require('./departments/department.routes');
 const applicationRoutes = require("./applications/application.routes");
 const studentRoutes = require("./students/student.routes");
+const studentAdminRoutes = require("./students/admin.routes");
 const facultyRoutes = require("./events/faculty.routes");
+const facultyAdminRoutes = require("./faculty/admin.routes");
 const adminRoutes = require("./events/admin.routes");
 
 const app = express();
@@ -35,6 +37,8 @@ app.use('/api/departments', departmentRouter);
 app.use('/api/faculty', facultyRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/admin/students", studentAdminRoutes);
+app.use("/api/admin/faculty", facultyAdminRoutes);
 app.use("/api/admin", adminRoutes);
 
 startServer(app);

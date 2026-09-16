@@ -73,7 +73,7 @@ async function archiveEvent(req, res) {
     const event = await eventService.archiveEvent(req.params.id, req.user.id, 'faculty');
     return res.status(200).json({ success: true, data: event });
   } catch (error) {
-    const statusCode = erorr.statusCode || 500;
+    const statusCode = error.statusCode || 500;
     return res.status(statusCode).json({ success: false, message: error.message });
   }
 }
@@ -98,7 +98,7 @@ async function getApplicationsForEvent(req, res) {
 
 async function approveApplication(req, res) {
   try {
-    const application = applicationService.approveApplication(req.params.applicationId, req.userId);
+    const application = applicationService.approveApplication(req.params.applicationId, req.user.id);
     return res.status(200).json({ success: true, data: application });
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -108,7 +108,7 @@ async function approveApplication(req, res) {
 
 async function rejectApplication(req, res) {
   try {
-    const application = applicationService.rejectApplication(req.params.applicationId, req.userId);
+    const application = applicationService.rejectApplication(req.params.applicationId, req.user.id);
     return res.status(200).json({ success: true, data: application });
   } catch (error) {
     const statusCode = error.statusCode || 500;
