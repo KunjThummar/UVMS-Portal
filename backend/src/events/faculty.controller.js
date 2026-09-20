@@ -80,14 +80,14 @@ async function archiveEvent(req, res) {
 
 async function getApplicationsForEvent(req, res) {
   try {
-    const event = await eventService.getEventById(req.params.eventId);
+    const event = await eventService.getEventById(req.params.id);
 
     if (event.createdBy.toString() !== req.user.id.toString()) {
       throw new ApiError(403, 'You are not authorized to view applications for this event');
     }
 
     const statusFilter = req.query.status;
-    const applications = await applicationService.getByEvent(req.params.eventId, statusFilter);
+    const applications = await applicationService.getByEvent(req.params.id, statusFilter);
 
     return res.status(200).json({ success: true, data: applications });
   } catch (error) {

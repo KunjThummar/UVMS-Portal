@@ -106,11 +106,39 @@ async function getEligibleEventsForStudent(student, filters = {}) {
   }
 }
 
-async function getEventForStudent(eventId, studentId) {
-  const event = await Event.findById(eventId);
-  const student = await Student.findById(studentId);
+async function getFacultyEventById(eventId) {
+  const event = await Event.findById(eventId)
+    .populate('createdBy', 'fullName email');
+  
   if (!event) {
     throw new ApiError(404, 'Event not found');
+  }
+  
+  return event;
+}
+
+async function getFacultyEventById(eventId) {
+  const event = await Event.findById(eventId)
+    .populate('createdBy', 'fullName email');
+  
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
+  
+  return event;
+}
+
+async function getEventForStudent(eventId, studentId) {
+  const event = await Event.findById(eventId)
+    .populate('createdBy', 'fullName email');
+  const student = await Student.findById(studentId);
+
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
+
+  if (!student) {
+    throw new ApiError(404, 'Student not found');
   }
 
   const eligible = isStudentEligibleForEvent(student, event);
@@ -126,8 +154,10 @@ async function getAllEventsForFacultyOrAdmin(filters = {}) {
   const query = {};
 
   // --- eventLevel filter ---
-  if (filters.level) {
-    query.eventLevel = filters.level;
+  // Accept both `level` (legacy) and `eventLevel` (what the frontend actually sends)
+  const level = filters.level || filters.eventLevel;
+  if (level) {
+    query.eventLevel = level;
   }
 
   // --- status filter ---
