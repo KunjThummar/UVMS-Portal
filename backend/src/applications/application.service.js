@@ -1,4 +1,4 @@
-const  VolunteerApplication  = require("../models/volunteerApplication.model");
+const VolunteerApplication = require("../models/volunteerapplication.model");
 const Event = require("../models/event.model");
 const Student = require("../models/student.model");
 const eventService = require("../events/event.service");
@@ -75,6 +75,10 @@ const applyToEvent = async (eventId, studentId, data) => {
 
                 email: student.email,
 
+                mobileNumber: student.mobileNumber || null,
+
+                appliedRole: data.appliedRole || "Volunteer",
+
                 previousExperience:
                     data.previousExperience || null
             });
@@ -111,7 +115,8 @@ const approveApplication = async (applicationId, facultyId) => {
     }
 
     // Check faculty owns the event
-    if (event.createdBy.toString() !== facultyId.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (creatorId !== facultyId.toString()) {
         throw new ApiError(403, "You are not authorized to approve this application.");
     }
 
@@ -174,7 +179,8 @@ const rejectApplication = async (applicationId, facultyId) => {
     }
 
     // Check faculty owns the event
-    if (event.createdBy.toString() !== facultyId.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (creatorId !== facultyId.toString()) {
         throw new ApiError(403, "You are not authorized to reject this application.");
     }
 
@@ -203,14 +209,14 @@ const getByStudent = async (studentId, statusFilter) => {    //status filter = "
     };
 
     // Optional status filter
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== 'All') {
         query.status = statusFilter;
     }
 
     const applications = await VolunteerApplication.find(query)
         .populate({
             path: "eventId",
-            select: "title description eventDate applicationDeadline volunteerCapacity approvedCount eventLevel status"
+            select: "title description eventDate eventEndDate academicYear organizer subOrganizer eventType eventMode eventDay applicationDeadline volunteerCapacity approvedCount eventLevel status"
         })
         .sort({
             appliedAt: -1
@@ -225,48 +231,95 @@ const getByEvent = async (eventId, statusFilter) => {
     };
 
     // Optional status filter
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== 'All') {
         query.status = statusFilter;
     }
 
     const applications = await VolunteerApplication.find(query)
         .populate({
             path: "studentId",
-            select: "fullName studentId email semester instituteId departmentId"
+            select: "fullName studentId email mobileNumber semester instituteId departmentId"
         })
         .sort({
             appliedAt: -1
         });
 
-    return applications;
+    const enrichedApplications = await Promise.all(
+        applications.map(async (app) => {
+            const appObj = app.toObject();
+            const studentMongoId = app.studentId?._id || app.studentId;
+
+            if (studentMongoId) {
+                const pastParticipations = await VolunteerApplication.find({
+                    studentId: studentMongoId,
+                    status: "Approved",
+                    eventId: { $ne: eventId }
+                })
+                .populate({
+                    path: "eventId",
+                    select: "title eventDate eventEndDate academicYear organizer subOrganizer eventType eventMode eventDay eventLevel status"
+                })
+                .sort({ appliedAt: -1 });
+
+                appObj.pastParticipations = pastParticipations.map((p) => ({
+                    applicationId: p._id,
+                    eventId: p.eventId?._id,
+                    eventTitle: p.eventId?.title || "Unknown Event",
+                    eventDate: p.eventId?.eventDate,
+                    eventLevel: p.eventId?.eventLevel,
+                    eventStatus: p.eventId?.status,
+                    appliedRole: p.appliedRole || "Volunteer",
+                    previousExperience: p.previousExperience,
+                    decisionAt: p.decisionAt
+                }));
+                appObj.pastParticipationCount = pastParticipations.length;
+            } else {
+                appObj.pastParticipations = [];
+                appObj.pastParticipationCount = 0;
+            }
+
+            return appObj;
+        })
+    );
+
+    return enrichedApplications;
 };
 
 const getAll = async (filters = {}) => {
     const query = {};
 
-    // Filter by event
-    if (filters.eventId) {
-        query.eventId = filters.eventId;
+    // Filter by event (strictly ignore empty and 'all' to prevent Cast to ObjectId error)
+    if (filters.eventId && typeof filters.eventId === 'string') {
+        const trimmedEventId = filters.eventId.trim();
+        if (trimmedEventId !== '' && trimmedEventId.toLowerCase() !== 'all') {
+            query.eventId = trimmedEventId;
+        }
     }
 
-    // Filter by student
-    if (filters.studentId) {
-        query.studentId = filters.studentId;
+    // Filter by student (strictly ignore empty and 'all')
+    if (filters.studentId && typeof filters.studentId === 'string') {
+        const trimmedStudentId = filters.studentId.trim();
+        if (trimmedStudentId !== '' && trimmedStudentId.toLowerCase() !== 'all') {
+            query.studentId = trimmedStudentId;
+        }
     }
 
-    // Filter by status
-    if (filters.status) {
-        query.status = filters.status;
+    // Filter by status (case-insensitive check against 'all')
+    if (filters.status && typeof filters.status === 'string') {
+        const trimmedStatus = filters.status.trim();
+        if (trimmedStatus !== '' && trimmedStatus.toLowerCase() !== 'all') {
+            query.status = trimmedStatus;
+        }
     }
 
     const applications = await VolunteerApplication.find(query)
         .populate({
             path: "eventId",                //populate replace the eventId reference with the actual event document
-            select: "title eventDate applicationDeadline volunteerCapacity approvedCount eventLevel status"
+            select: "title eventDate eventEndDate academicYear organizer subOrganizer eventType eventMode eventDay applicationDeadline volunteerCapacity approvedCount eventLevel status"
         })
         .populate({
             path: "studentId",              //populate replace the studentId reference with the actual student document
-            select: "fullName studentId email semester instituteId departmentId"
+            select: "fullName studentId email mobileNumber semester instituteId departmentId"
         })
         .populate({                         //populate replace the decisionBy reference with the actual faculty document
             path: "decisionBy",
@@ -279,11 +332,62 @@ const getAll = async (filters = {}) => {
     return applications;
 };
 
+const getStudentParticipationHistory = async (studentId) => {
+    const student = await Student.findById(studentId).select("-passwordHash");
+    if (!student) {
+        throw new ApiError(404, "Student not found.");
+    }
+
+    const applications = await VolunteerApplication.find({
+        studentId,
+        status: "Approved"
+    })
+    .populate({
+        path: "eventId",
+        select: "title description eventDate eventEndDate academicYear organizer subOrganizer eventType eventMode eventDay applicationDeadline volunteerCapacity approvedCount eventLevel status isArchived createdBy",
+        populate: {
+            path: "createdBy",
+            select: "fullName email"
+        }
+    })
+    .sort({ appliedAt: -1 });
+
+    const roleBreakdown = {
+        Coordinator: 0,
+        "Sub-Coordinator": 0,
+        Volunteer: 0
+    };
+
+    applications.forEach((app) => {
+        const role = app.appliedRole || "Volunteer";
+        if (roleBreakdown[role] !== undefined) {
+            roleBreakdown[role]++;
+        } else {
+            roleBreakdown[role] = 1;
+        }
+    });
+
+    return {
+        student: {
+            id: student._id,
+            fullName: student.fullName,
+            studentId: student.studentId,
+            email: student.email,
+            mobileNumber: student.mobileNumber,
+            semester: student.semester
+        },
+        totalParticipations: applications.length,
+        roleBreakdown,
+        history: applications
+    };
+};
+
 module.exports = {
     applyToEvent,
     approveApplication,
     rejectApplication,
     getByStudent,
     getByEvent,
-    getAll
+    getAll,
+    getStudentParticipationHistory
 };

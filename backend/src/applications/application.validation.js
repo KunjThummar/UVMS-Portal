@@ -4,6 +4,13 @@ const Joi = require("joi");
 // Apply Validation
 // =====================================
 const applySchema = Joi.object({
+    appliedRole: Joi.string()
+        .valid("Coordinator", "Sub-Coordinator", "Volunteer")
+        .default("Volunteer")
+        .optional()
+        .messages({
+            "any.only": "Applied role must be Coordinator, Sub-Coordinator, or Volunteer.",
+        }),
     previousExperience: Joi.string()
         .trim()
         .allow("")

@@ -17,6 +17,9 @@ router.patch("/:id/reject", authenticate, authorize("faculty"), applicationContr
 // Get applications for an event
 router.get("/event/:eventId", authenticate, authorize("faculty"), applicationController.getByEvent);
 
+// Get student participation history
+router.get("/student/:studentId/history", authenticate, authorize("faculty", "admin"), applicationController.getStudentHistoryForFaculty);
+
 // ======================================
 // Admin Routes
 // ======================================

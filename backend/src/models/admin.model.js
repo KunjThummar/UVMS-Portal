@@ -16,6 +16,11 @@ const adminSchema = new mongoose.Schema(
             trim: true
         },
 
+        mobileNumber: {
+            type: String,
+            trim: true
+        },
+
         passwordHash: {
             type: String,
             required: true
@@ -31,4 +36,4 @@ const adminSchema = new mongoose.Schema(
 );
 
 
-module.exports = mongoose.model('Administrator', adminSchema);
+module.exports = mongoose.models.Administrator || mongoose.model('Administrator', adminSchema);

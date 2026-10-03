@@ -30,6 +30,17 @@ const volunteerApplicationSchema = new Schema({
     type: String,
     required: true
   },
+  mobileNumber: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  appliedRole: {
+    type: String,
+    enum: ['Coordinator', 'Sub-Coordinator', 'Volunteer'],
+    default: 'Volunteer',
+    required: true
+  },
   previousExperience: {
     type: String,
     default: null
@@ -80,4 +91,4 @@ volunteerApplicationSchema.index(
   }
 );
 
-module.exports = mongoose.model('VolunteerApplication', volunteerApplicationSchema);
+module.exports = mongoose.models.VolunteerApplication || mongoose.model('VolunteerApplication', volunteerApplicationSchema);

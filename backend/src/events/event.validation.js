@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+const VALID_EVENT_TYPES = ['Seminar', 'Workshop', 'NSS', 'Hackathon', 'Hackthon', 'Expert Lecture'];
+const VALID_EVENT_MODES = ['offline', 'online'];
+const ACADEMIC_YEAR_REGEX = /^\d{4}-\d{2}$/;
+
 function validateCreateEvent(data) {
   const errors = [];
   const now = new Date();
@@ -8,6 +12,12 @@ function validateCreateEvent(data) {
     title,
     description,
     eventDate,
+    eventEndDate,
+    academicYear,
+    organizer,
+    subOrganizer,
+    eventType,
+    eventMode,
     applicationDeadline,
     volunteerCapacity,
     eventLevel,
@@ -25,7 +35,7 @@ function validateCreateEvent(data) {
     errors.push('description is required and must be a non-empty string');
   }
 
-  // --- eventDate ---
+  // --- eventDate (start date) ---
   let parsedEventDate = null;
   if (!eventDate || isNaN(Date.parse(eventDate))) {
     errors.push('eventDate is required and must be a valid date');
@@ -34,6 +44,22 @@ function validateCreateEvent(data) {
     if (parsedEventDate <= now) {
       errors.push('eventDate must be in the future');
     }
+  }
+
+  // --- eventEndDate ---
+  let parsedEndDate = null;
+  if (!eventEndDate || isNaN(Date.parse(eventEndDate))) {
+    errors.push('eventEndDate is required and must be a valid date');
+  } else {
+    parsedEndDate = new Date(eventEndDate);
+    if (parsedEndDate <= now) {
+      errors.push('eventEndDate must be in the future');
+    }
+  }
+
+  // eventEndDate must be on or after eventDate
+  if (parsedEventDate && parsedEndDate && parsedEndDate < parsedEventDate) {
+    errors.push('eventEndDate must be greater than or equal to eventDate');
   }
 
   // --- applicationDeadline ---
@@ -47,9 +73,35 @@ function validateCreateEvent(data) {
     }
   }
 
-  // only compare the two dates if both individually parsed successfully
   if (parsedEventDate && parsedDeadline && parsedDeadline >= parsedEventDate) {
     errors.push('applicationDeadline must be before eventDate');
+  }
+
+  // --- organizer (Institute name) ---
+  if (!organizer || typeof organizer !== 'string' || organizer.trim().length === 0) {
+    errors.push('organizer (institute name) is required and must be a non-empty string');
+  }
+
+  // --- subOrganizer (Department name, optional) ---
+  if (subOrganizer !== undefined && subOrganizer !== null && typeof subOrganizer !== 'string') {
+    errors.push('subOrganizer must be a string');
+  }
+
+  // --- eventType ---
+  if (!eventType || !VALID_EVENT_TYPES.includes(eventType)) {
+    errors.push(`eventType is required and must be one of: ${VALID_EVENT_TYPES.filter(t => t !== 'Hackthon').join(', ')}`);
+  }
+
+  // --- eventMode ---
+  if (!eventMode || !VALID_EVENT_MODES.includes(eventMode.toString().toLowerCase())) {
+    errors.push('eventMode is required and must be either "offline" or "online"');
+  }
+
+  // --- academicYear (optional in payload; auto-derived from eventDate if omitted) ---
+  if (academicYear !== undefined && academicYear !== null) {
+    if (typeof academicYear !== 'string' || !ACADEMIC_YEAR_REGEX.test(academicYear.trim())) {
+      errors.push('academicYear must be in format YYYY-YY (e.g. 2025-26, 2026-27)');
+    }
   }
 
   // --- volunteerCapacity ---
@@ -79,9 +131,29 @@ function validateCreateEvent(data) {
         errors.push('targetInstituteIds must contain only valid Mongo ObjectIds');
       }
     }
+    if (targetDepartmentIds !== undefined && targetDepartmentIds !== null) {
+      if (!Array.isArray(targetDepartmentIds)) {
+        errors.push('targetDepartmentIds must be an array of Mongo ObjectIds if provided');
+      } else {
+        const allValid = targetDepartmentIds.every((id) => mongoose.Types.ObjectId.isValid(id));
+        if (!allValid) {
+          errors.push('targetDepartmentIds must contain only valid Mongo ObjectIds');
+        }
+      }
+    }
   }
 
   if (eventLevel === 'Department') {
+    if (targetInstituteIds !== undefined && targetInstituteIds !== null) {
+      if (!Array.isArray(targetInstituteIds)) {
+        errors.push('targetInstituteIds must be an array of Mongo ObjectIds if provided');
+      } else {
+        const allValid = targetInstituteIds.every((id) => mongoose.Types.ObjectId.isValid(id));
+        if (!allValid) {
+          errors.push('targetInstituteIds must contain only valid Mongo ObjectIds');
+        }
+      }
+    }
     if (!Array.isArray(targetDepartmentIds) || targetDepartmentIds.length === 0) {
       errors.push('targetDepartmentIds is required and must be a non-empty array when eventLevel is Department');
     } else {
@@ -106,6 +178,12 @@ function validateUpdateEvent(data) {
     title,
     description,
     eventDate,
+    eventEndDate,
+    academicYear,
+    organizer,
+    subOrganizer,
+    eventType,
+    eventMode,
     applicationDeadline,
     volunteerCapacity,
     eventLevel,
@@ -140,6 +218,23 @@ function validateUpdateEvent(data) {
     }
   }
 
+  // --- eventEndDate (optional) ---
+  let parsedEndDate = null;
+  if (eventEndDate !== undefined) {
+    if (isNaN(Date.parse(eventEndDate))) {
+      errors.push('eventEndDate must be a valid date');
+    } else {
+      parsedEndDate = new Date(eventEndDate);
+      if (parsedEndDate <= now) {
+        errors.push('eventEndDate must be in the future');
+      }
+    }
+  }
+
+  if (parsedEventDate && parsedEndDate && parsedEndDate < parsedEventDate) {
+    errors.push('eventEndDate must be greater than or equal to eventDate');
+  }
+
   // --- applicationDeadline (optional) ---
   let parsedDeadline = null;
   if (applicationDeadline !== undefined) {
@@ -153,9 +248,37 @@ function validateUpdateEvent(data) {
     }
   }
 
-  // cross-field check only if BOTH were sent in this update AND both parsed cleanly
   if (parsedEventDate && parsedDeadline && parsedDeadline >= parsedEventDate) {
     errors.push('applicationDeadline must be before eventDate');
+  }
+
+  // --- organizer (optional) ---
+  if (organizer !== undefined) {
+    if (typeof organizer !== 'string' || organizer.trim().length === 0) {
+      errors.push('organizer must be a non-empty string');
+    }
+  }
+
+  // --- subOrganizer (optional) ---
+  if (subOrganizer !== undefined && subOrganizer !== null && typeof subOrganizer !== 'string') {
+    errors.push('subOrganizer must be a string');
+  }
+
+  // --- eventType (optional) ---
+  if (eventType !== undefined && !VALID_EVENT_TYPES.includes(eventType)) {
+    errors.push(`eventType must be one of: ${VALID_EVENT_TYPES.filter(t => t !== 'Hackthon').join(', ')}`);
+  }
+
+  // --- eventMode (optional) ---
+  if (eventMode !== undefined && !VALID_EVENT_MODES.includes(eventMode.toString().toLowerCase())) {
+    errors.push('eventMode must be either "offline" or "online"');
+  }
+
+  // --- academicYear (optional) ---
+  if (academicYear !== undefined && academicYear !== null) {
+    if (typeof academicYear !== 'string' || !ACADEMIC_YEAR_REGEX.test(academicYear.trim())) {
+      errors.push('academicYear must be in format YYYY-YY (e.g. 2025-26, 2026-27)');
+    }
   }
 
   // --- volunteerCapacity (optional) ---
@@ -177,7 +300,7 @@ function validateUpdateEvent(data) {
     }
   }
 
-  // --- conditional target arrays — only checked if eventLevel was sent in THIS update ---
+  // --- conditional target arrays ---
   if (eventLevel === 'Institute') {
     if (!Array.isArray(targetInstituteIds) || targetInstituteIds.length === 0) {
       errors.push('targetInstituteIds is required and must be a non-empty array when eventLevel is Institute');
@@ -187,9 +310,29 @@ function validateUpdateEvent(data) {
         errors.push('targetInstituteIds must contain only valid Mongo ObjectIds');
       }
     }
+    if (targetDepartmentIds !== undefined && targetDepartmentIds !== null) {
+      if (!Array.isArray(targetDepartmentIds)) {
+        errors.push('targetDepartmentIds must be an array of Mongo ObjectIds if provided');
+      } else {
+        const allValid = targetDepartmentIds.every((id) => mongoose.Types.ObjectId.isValid(id));
+        if (!allValid) {
+          errors.push('targetDepartmentIds must contain only valid Mongo ObjectIds');
+        }
+      }
+    }
   }
 
   if (eventLevel === 'Department') {
+    if (targetInstituteIds !== undefined && targetInstituteIds !== null) {
+      if (!Array.isArray(targetInstituteIds)) {
+        errors.push('targetInstituteIds must be an array of Mongo ObjectIds if provided');
+      } else {
+        const allValid = targetInstituteIds.every((id) => mongoose.Types.ObjectId.isValid(id));
+        if (!allValid) {
+          errors.push('targetInstituteIds must contain only valid Mongo ObjectIds');
+        }
+      }
+    }
     if (!Array.isArray(targetDepartmentIds) || targetDepartmentIds.length === 0) {
       errors.push('targetDepartmentIds is required and must be a non-empty array when eventLevel is Department');
     } else {
@@ -200,8 +343,6 @@ function validateUpdateEvent(data) {
     }
   }
 
-  // if targetInstituteIds/targetDepartmentIds are sent WITHOUT eventLevel also being sent,
-  // we can't validate them against a level context in this update payload alone
   if (eventLevel === undefined && (targetInstituteIds !== undefined || targetDepartmentIds !== undefined)) {
     errors.push('eventLevel must be included in the same request when updating targetInstituteIds or targetDepartmentIds');
   }
@@ -212,4 +353,4 @@ function validateUpdateEvent(data) {
   };
 }
 
-module.exports = { validateCreateEvent , validateUpdateEvent };
+module.exports = { validateCreateEvent, validateUpdateEvent };

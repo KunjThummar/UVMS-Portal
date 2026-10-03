@@ -174,6 +174,7 @@ const getMe = async (req, res) => {
             success: true,
             message: "Profile fetched successfully.",
             data: profile,
+            role: req.user.role,
         });
     } catch (error) {
         return res.status(404).json({

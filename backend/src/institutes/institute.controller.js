@@ -4,9 +4,9 @@ const {validateInstitute} = require('./institute.validation')
 async function listInstitutes(req , res){
     try {
         const institutes = await instituteService.getAll();
-        return res.status(200).json(institutes);
+        return res.status(200).json({ success: true, data: institutes });
     } catch (error) {
-        return res.status(500).json({message : error.message});
+        return res.status(500).json({ success: false, message: error.message });
     }
 }
 

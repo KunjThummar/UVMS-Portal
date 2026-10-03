@@ -1,6 +1,7 @@
 const Student = require("../models/student.model");
 const Institute = require("../models/institute.model");
 const Department = require("../models/department.model");
+const VolunteerApplication = require("../models/volunteerapplication.model");
 const ApiError = require("../utils/ApiError");
 const bcrypt = require("bcrypt");
 
@@ -14,7 +15,15 @@ const getProfile = async (studentId) => {
         throw new ApiError(404, "Student not found.");
     }
 
-    return student;
+    const totalParticipations = await VolunteerApplication.countDocuments({
+        studentId,
+        status: "Approved"
+    });
+
+    const studentObj = student.toObject();
+    studentObj.totalParticipations = totalParticipations;
+
+    return studentObj;
 };
 
 const listAll = async (filters = {}) => {
@@ -30,7 +39,7 @@ const listAll = async (filters = {}) => {
 };
 
 const create = async (data) => {
-    const { fullName, studentId, email, password, instituteId, departmentId, semester } = data;
+    const { fullName, studentId, email, mobileNumber, password, instituteId, departmentId, semester } = data;
 
     const existingStudentId = await Student.findOne({ studentId });
     if (existingStudentId) {
@@ -59,6 +68,7 @@ const create = async (data) => {
             fullName,
             studentId,
             email,
+            mobileNumber,
             passwordHash,
             instituteId,
             departmentId,
@@ -135,11 +145,62 @@ const toggleStatus = async (id, isActive) => {
     }
 };
 
+const getParticipationHistory = async (studentId) => {
+    const student = await Student.findById(studentId);
+    if (!student) {
+        throw new ApiError(404, "Student not found.");
+    }
+
+    const applications = await VolunteerApplication.find({
+        studentId,
+        status: "Approved"
+    })
+    .populate({
+        path: "eventId",
+        select: "title description eventDate eventEndDate academicYear organizer subOrganizer eventType eventMode eventDay applicationDeadline volunteerCapacity approvedCount eventLevel status isArchived createdBy",
+        populate: {
+            path: "createdBy",
+            select: "fullName email"
+        }
+    })
+    .sort({ appliedAt: -1 });
+
+    const roleBreakdown = {
+        Coordinator: 0,
+        "Sub-Coordinator": 0,
+        Volunteer: 0
+    };
+
+    applications.forEach((app) => {
+        const role = app.appliedRole || "Volunteer";
+        if (roleBreakdown[role] !== undefined) {
+            roleBreakdown[role]++;
+        } else {
+            roleBreakdown[role] = 1;
+        }
+    });
+
+    return {
+        student: {
+            id: student._id,
+            fullName: student.fullName,
+            studentId: student.studentId,
+            email: student.email,
+            mobileNumber: student.mobileNumber,
+            semester: student.semester
+        },
+        totalParticipations: applications.length,
+        roleBreakdown,
+        history: applications
+    };
+};
+
 module.exports = {
     getProfile,
     listAll,
     create,
     updateById,
     remove,
-    toggleStatus
+    toggleStatus,
+    getParticipationHistory
 };

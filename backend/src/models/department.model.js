@@ -25,4 +25,4 @@ const departmentSchema = new Schema({
 // each have their own "CSE" department
 departmentSchema.index({ instituteId: 1, code: 1 }, { unique: true });
 
-module.exports = mongoose.model('Department', departmentSchema);
+module.exports = mongoose.models.Department || mongoose.model('Department', departmentSchema);

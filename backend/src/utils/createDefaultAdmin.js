@@ -20,6 +20,7 @@ const createDefaultAdmin = async () => {
     await Administrator.create({
       fullName: process.env.ADMIN_FULL_NAME,
       email: process.env.ADMIN_EMAIL,
+      mobileNumber: process.env.ADMIN_MOBILE || "",
       passwordHash,
     });
 

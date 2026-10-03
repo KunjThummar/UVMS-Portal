@@ -26,4 +26,7 @@ router.post("/events/:id/apply", authenticate, authorize("student"), studentCont
 // My Applications
 router.get("/applications", authenticate, authorize("student"), studentController.getMyApplications);
 
+// Participation History
+router.get("/history", authenticate, authorize("student"), studentController.getParticipationHistory);
+
 module.exports = router;

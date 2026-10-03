@@ -17,6 +17,7 @@ const registerStudent = async (data) => {
         fullName,
         studentId,
         email,
+        mobileNumber,
         password,
         instituteId,
         departmentId,
@@ -45,6 +46,7 @@ const registerStudent = async (data) => {
         fullName,
         studentId,
         email,
+        mobileNumber,
         passwordHash,
         instituteId,
         departmentId,
@@ -107,6 +109,7 @@ const registerFaculty = async (data) => {
     const {
         fullName,
         email,
+        mobileNumber,
         password,
         instituteId,
         departmentId,
@@ -126,6 +129,7 @@ const registerFaculty = async (data) => {
     const faculty = await Faculty.create({
         fullName,
         email,
+        mobileNumber,
         passwordHash,
         instituteId,
         departmentId,

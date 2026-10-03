@@ -145,10 +145,31 @@ const getMyApplications = async (req, res) => {
     }
 };
 
+// ======================================
+// Get Participation History
+// ======================================
+const getParticipationHistory = async (req, res) => {
+    try {
+        const historyData = await studentService.getParticipationHistory(req.user.id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Participation history fetched successfully.",
+            data: historyData
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
     getProfile,
     getEligibleEvents,
     getEventById,
     applyToEvent,
-    getMyApplications
+    getMyApplications,
+    getParticipationHistory
 };

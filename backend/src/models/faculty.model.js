@@ -16,6 +16,11 @@ const facultySchema = new mongoose.Schema(
             trim: true
         },
 
+        mobileNumber: {
+            type: String,
+            trim: true
+        },
+
         passwordHash: {
             type: String,
             required: true
@@ -47,4 +52,4 @@ facultySchema.index({ instituteId: 1 });
 
 facultySchema.index({ departmentId: 1 });
 
-module.exports = mongoose.model("Faculty", facultySchema);
+module.exports = mongoose.models.Faculty || mongoose.model("Faculty", facultySchema);

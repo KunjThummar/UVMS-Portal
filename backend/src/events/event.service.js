@@ -1,41 +1,84 @@
 const Event = require('../models/event.model');
 const Student = require('../models/student.model');
-const VolunteerApplication = require('../models/volunteerApplication.model');
+const VolunteerApplication = require('../models/volunteerapplication.model');
 const ApiError = require('../utils/ApiError');
 
 const escapeRegex = (value) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+function calculateAcademicYear(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const startYear = month >= 6 ? year : year - 1;
+  const endYearShort = String(startYear + 1).slice(-2);
+  return `${startYear}-${endYearShort}`;
+}
+
+function calculateEventDay(startDate, endDate) {
+  if (!startDate || !endDate) return 1;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  const diff = Math.round((endUtc - startUtc) / msPerDay) + 1;
+  return Math.max(1, diff);
+}
+
 function isStudentEligibleForEvent(student, event) {
+  const studentInstId = (student.instituteId?._id || student.instituteId)?.toString();
+  const studentDeptId = (student.departmentId?._id || student.departmentId)?.toString();
+
   switch (event.eventLevel) {
     case 'University':
       return true;
 
-    case 'Institute':
-      return (!!student.instituteId &&
+    case 'Institute': {
+      const matchesInstitute = (
+        !!studentInstId &&
         Array.isArray(event.targetInstituteIds) &&
         event.targetInstituteIds.some(
-          (instId) => instId.toString() === student.instituteId.toString()
+          (instId) => (instId?._id || instId)?.toString() === studentInstId
         )
       );
+      if (!matchesInstitute) return false;
+
+      if (Array.isArray(event.targetDepartmentIds) && event.targetDepartmentIds.length > 0) {
+        return (
+          !!studentDeptId &&
+          event.targetDepartmentIds.some(
+            (deptId) => (deptId?._id || deptId)?.toString() === studentDeptId
+          )
+        );
+      }
+      return true;
+    }
 
     case 'Department':
-      return (!!student.departmentId &&
+      return (
+        !!studentDeptId &&
         Array.isArray(event.targetDepartmentIds) &&
         event.targetDepartmentIds.some(
-          (deptId) => deptId.toString() === student.departmentId.toString()
+          (deptId) => (deptId?._id || deptId)?.toString() === studentDeptId
         )
       );
   }
 }
 
 async function getEligibleEventsForStudent(student, filters = {}) {
-
   const eligibilityOr = [
     { eventLevel: 'University' },
     {
       eventLevel: 'Institute',
-      targetInstituteIds: student.instituteId
+      targetInstituteIds: student.instituteId,
+      $or: [
+        { targetDepartmentIds: { $exists: false } },
+        { targetDepartmentIds: { $size: 0 } },
+        { targetDepartmentIds: student.departmentId }
+      ]
     },
     {
       eventLevel: 'Department',
@@ -47,90 +90,88 @@ async function getEligibleEventsForStudent(student, filters = {}) {
 
   // Status filter
   if (filters.status) {
-    andConditions.push({
-      status: filters.status
-    });
+    andConditions.push({ status: filters.status });
+  }
+
+  // Academic Year filter
+  if (filters.academicYear) {
+    andConditions.push({ academicYear: filters.academicYear });
+  }
+
+  // Event Type filter
+  if (filters.eventType) {
+    andConditions.push({ eventType: filters.eventType });
+  }
+
+  // Event Mode filter
+  if (filters.eventMode) {
+    andConditions.push({ eventMode: filters.eventMode.toLowerCase() });
   }
 
   // Date filter
-   if (filters.dateFrom || filters.dateTo) {
+  if (filters.dateFrom || filters.dateTo) {
     const eventDateFilters = {};
-
     if (filters.dateFrom) {
       eventDateFilters.$gte = new Date(filters.dateFrom);
     }
-
     if (filters.dateTo) {
       const endDate = new Date(filters.dateTo);
       endDate.setDate(endDate.getDate() + 1);
-
       eventDateFilters.$lt = endDate;
     }
-
-    andConditions.push({
-      eventDate: eventDateFilters,
-    });
+    andConditions.push({ eventDate: eventDateFilters });
   }
 
   // Search filter
   if (filters.search) {
     const searchRegex = new RegExp(escapeRegex(filters.search), 'i');
-
     andConditions.push({
       $or: [
         { title: searchRegex },
-        { description: searchRegex }
+        { description: searchRegex },
+        { organizer: searchRegex },
+        { subOrganizer: searchRegex }
       ]
     });
   }
 
   // Archived filter
   if (!filters.includeArchived) {
-    andConditions.push({
-      isArchived: false
-    });
+    andConditions.push({ isArchived: false });
   }
 
-  const query = {
-    $and: andConditions
-  };
+  const query = { $and: andConditions };
 
   try {
     const events = await Event.find(query)
+      .populate('createdBy', 'fullName email')
+      .populate('targetInstituteIds', 'code name')
+      .populate('targetDepartmentIds', 'code name instituteId')
       .sort({ eventDate: 1 });
 
     return events;
-
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch eligible events: ' + error.message);
   }
 }
 
-async function getFacultyEventById(eventId) {
+async function getEventById(eventId) {
   const event = await Event.findById(eventId)
-    .populate('createdBy', 'fullName email');
-  
+    .populate('createdBy', 'fullName email')
+    .populate('targetInstituteIds', 'code name')
+    .populate('targetDepartmentIds', 'code name instituteId');
+
   if (!event) {
     throw new ApiError(404, 'Event not found');
   }
-  
+
   return event;
 }
 
-async function getFacultyEventById(eventId) {
-  const event = await Event.findById(eventId)
-    .populate('createdBy', 'fullName email');
-  
-  if (!event) {
-    throw new ApiError(404, 'Event not found');
-  }
-  
-  return event;
-}
+const getFacultyEventById = getEventById;
 
 async function getEventForStudent(eventId, studentId) {
-  const event = await Event.findById(eventId)
-    .populate('createdBy', 'fullName email');
+  const event = await getEventById(eventId);
   const student = await Student.findById(studentId);
 
   if (!event) {
@@ -153,33 +194,56 @@ async function getEventForStudent(eventId, studentId) {
 async function getAllEventsForFacultyOrAdmin(filters = {}) {
   const query = {};
 
-  // --- eventLevel filter ---
-  // Accept both `level` (legacy) and `eventLevel` (what the frontend actually sends)
   const level = filters.level || filters.eventLevel;
   if (level) {
     query.eventLevel = level;
   }
 
-  // --- status filter ---
-  if (filters.status) {
-    query.status = filters.status;
+  if (filters.status && typeof filters.status === 'string') {
+    const s = filters.status.trim().toLowerCase();
+    if (s !== '' && s !== 'all') {
+      if (s === 'closed') {
+        query.status = { $in: ['ApplicationClosed', 'Completed'] };
+      } else if (s === 'applicationclosed') {
+        query.status = 'ApplicationClosed';
+      } else if (s === 'open') {
+        query.status = 'Open';
+      } else if (s === 'completed') {
+        query.status = 'Completed';
+      } else {
+        query.status = filters.status;
+      }
+    }
   }
 
   if (filters.isArchived) {
     query.isArchived = true;
   }
 
-  // --- institute filter (matches events targeting this institute) ---
+  if (filters.academicYear) {
+    query.academicYear = filters.academicYear;
+  }
+
+  if (filters.eventType) {
+    query.eventType = filters.eventType;
+  }
+
+  if (filters.eventMode) {
+    query.eventMode = filters.eventMode.toLowerCase();
+  }
+
+  if (filters.organizer) {
+    query.organizer = new RegExp(escapeRegex(filters.organizer), 'i');
+  }
+
   if (filters.institute) {
     query.targetInstituteIds = filters.institute;
   }
 
-  // --- department filter (matches events targeting this department) ---
   if (filters.department) {
     query.targetDepartmentIds = filters.department;
   }
 
-  // --- date filter (single date OR range, on eventDate) ---
   if (filters.date) {
     const dayStart = new Date(filters.date);
     dayStart.setHours(0, 0, 0, 0);
@@ -198,14 +262,22 @@ async function getAllEventsForFacultyOrAdmin(filters = {}) {
     query.eventDate = eventDateFilter;
   }
 
-  // --- search text (title or description, case-insensitive) ---
   if (filters.search) {
-    const searchRegex = new RegExp(filters.search, 'i');
-    query.$or = [{ title: searchRegex }, { description: searchRegex }];
+    const searchRegex = new RegExp(escapeRegex(filters.search), 'i');
+    query.$or = [
+      { title: searchRegex },
+      { description: searchRegex },
+      { organizer: searchRegex },
+      { subOrganizer: searchRegex }
+    ];
   }
 
   try {
-    const events = await Event.find(query).sort({ eventDate: 1 });
+    const events = await Event.find(query)
+      .populate('createdBy', 'fullName email')
+      .populate('targetInstituteIds', 'code name')
+      .populate('targetDepartmentIds', 'code name instituteId')
+      .sort({ eventDate: 1 });
     return events;
   } catch (error) {
     throw new ApiError(500, 'Failed to fetch events: ' + error.message);
@@ -217,6 +289,12 @@ async function createEvent(data, facultyId) {
     title,
     description,
     eventDate,
+    eventEndDate,
+    academicYear,
+    organizer,
+    subOrganizer,
+    eventType,
+    eventMode,
     applicationDeadline,
     volunteerCapacity,
     eventLevel,
@@ -224,24 +302,38 @@ async function createEvent(data, facultyId) {
     targetDepartmentIds
   } = data;
 
-  // applicationDeadline must be before eventDate
-  const deadline = new Date(applicationDeadline);
   const date = new Date(eventDate);
+  const endDate = new Date(eventEndDate);
+  const deadline = new Date(applicationDeadline);
 
   if (deadline >= date) {
     throw new ApiError(400, 'applicationDeadline must be before eventDate');
   }
+
+  if (endDate < date) {
+    throw new ApiError(400, 'eventEndDate must be greater than or equal to eventDate');
+  }
+
+  const computedAcademicYear = academicYear || calculateAcademicYear(date);
+  const computedEventDay = calculateEventDay(date, endDate);
 
   try {
     const event = new Event({
       title,
       description,
       eventDate: date,
+      eventEndDate: endDate,
+      academicYear: computedAcademicYear,
+      organizer,
+      subOrganizer: subOrganizer || '',
+      eventType,
+      eventMode: eventMode ? eventMode.toLowerCase() : 'offline',
+      eventDay: computedEventDay,
       applicationDeadline: deadline,
       volunteerCapacity,
       eventLevel,
-      targetInstituteIds: eventLevel === 'Institute' ? targetInstituteIds : [],
-      targetDepartmentIds: eventLevel === 'Department' ? targetDepartmentIds : [],
+      targetInstituteIds: (eventLevel === 'Institute' || eventLevel === 'Department') ? (targetInstituteIds || []) : [],
+      targetDepartmentIds: eventLevel === 'Department' ? (targetDepartmentIds || []) : [],
       createdBy: facultyId
     });
 
@@ -259,16 +351,22 @@ async function updateEvent(eventId, data, actorId, actorRole) {
   }
 
   if (actorRole.toString() === 'faculty') {
-    if (event.createdBy.toString() !== actorId.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (creatorId !== actorId.toString()) {
       throw new ApiError(403, 'You are not authorized to update this event');
     }
   }
-  // Admin: no ownership check — can update any event
 
   const {
     title,
     description,
     eventDate,
+    eventEndDate,
+    academicYear,
+    organizer,
+    subOrganizer,
+    eventType,
+    eventMode,
     applicationDeadline,
     volunteerCapacity,
     eventLevel,
@@ -280,12 +378,41 @@ async function updateEvent(eventId, data, actorId, actorRole) {
 
   if (title !== undefined) event.title = title;
   if (description !== undefined) event.description = description;
-  if (eventDate !== undefined) event.eventDate = new Date(eventDate);
+
+  if (eventDate !== undefined) {
+    event.eventDate = new Date(eventDate);
+    event.academicYear = calculateAcademicYear(event.eventDate);
+  }
+  if (eventEndDate !== undefined) {
+    event.eventEndDate = new Date(eventEndDate);
+  }
+  if (eventDate !== undefined || eventEndDate !== undefined) {
+    event.eventDay = calculateEventDay(event.eventDate, event.eventEndDate);
+  }
+
+  if (academicYear !== undefined) event.academicYear = academicYear;
+  if (organizer !== undefined) event.organizer = organizer;
+  if (subOrganizer !== undefined) event.subOrganizer = subOrganizer;
+  if (eventType !== undefined) event.eventType = eventType;
+  if (eventMode !== undefined) event.eventMode = eventMode.toLowerCase();
+
   if (applicationDeadline !== undefined) event.applicationDeadline = new Date(applicationDeadline);
   if (volunteerCapacity !== undefined) event.volunteerCapacity = volunteerCapacity;
-  if (eventLevel !== undefined) event.eventLevel = eventLevel;
-  if (targetInstituteIds !== undefined) event.targetInstituteIds = targetInstituteIds;
-  if (targetDepartmentIds !== undefined) event.targetDepartmentIds = targetDepartmentIds;
+  if (eventLevel !== undefined) {
+    event.eventLevel = eventLevel;
+    if (eventLevel === 'University') {
+      event.targetInstituteIds = [];
+      event.targetDepartmentIds = [];
+    } else if (eventLevel === 'Institute') {
+      event.targetDepartmentIds = [];
+    }
+  }
+  if (targetInstituteIds !== undefined) {
+    event.targetInstituteIds = (event.eventLevel === 'Institute' || event.eventLevel === 'Department') ? targetInstituteIds : [];
+  }
+  if (targetDepartmentIds !== undefined) {
+    event.targetDepartmentIds = event.eventLevel === 'Department' ? targetDepartmentIds : [];
+  }
   if (status !== undefined) event.status = status;
   if (isArchived !== undefined) event.isArchived = isArchived;
 
@@ -304,7 +431,8 @@ async function reopenEvent(eventId, actorId, actorRole) {
   }
 
   if (actorRole.toString() === 'faculty') {
-    if (actorId.toString() !== event.createdBy.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (actorId.toString() !== creatorId) {
       throw new ApiError(403, 'You are not authorized to reopen this event');
     }
   }
@@ -327,7 +455,6 @@ async function reopenEvent(eventId, actorId, actorRole) {
 }
 
 async function archiveEvent(eventId, actorId, actorRole) {
-
   const event = await Event.findById(eventId);
 
   if (!event) {
@@ -335,7 +462,8 @@ async function archiveEvent(eventId, actorId, actorRole) {
   }
 
   if (actorRole.toString() === 'faculty') {
-    if (actorId.toString() !== event.createdBy.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (actorId.toString() !== creatorId) {
       throw new ApiError(403, 'You are not authorized to archive this event');
     }
   }
@@ -400,13 +528,11 @@ async function checkAndCloseIfFull(eventId) {
     return event;
   }
 
-  // Only 'Open' events should transition on capacity being reached.
-  // 'ApplicationClosed' and 'Completed' are already terminal/later states.
   if (event.status !== 'Open') {
     return event;
   }
 
-  event.status = 'ApplicationClosed'; // 'Full' folded into this, per updated enum
+  event.status = 'ApplicationClosed';
 
   try {
     await event.save();
@@ -434,15 +560,14 @@ async function markEventCompletedIfEventDatePassed(eventId) {
     throw new ApiError(404, 'Event not found');
   }
 
-  const eventDatePassed = event.eventDate < new Date();
+  // Check against eventEndDate (or eventDate if end date missing)
+  const finalDate = event.eventEndDate || event.eventDate;
+  const eventPassed = finalDate < new Date();
 
-  if (!eventDatePassed) {
+  if (!eventPassed) {
     return event;
   }
 
-  // Only events that have already gone through ApplicationClosed
-  // are eligible to complete — guarantees Pending apps were already
-  // resolved on the way here.
   if (event.status !== 'ApplicationClosed') {
     return event;
   }
@@ -456,19 +581,7 @@ async function markEventCompletedIfEventDatePassed(eventId) {
   }
 }
 
-async function getEventById(eventId) {
-  const event = await Event.findById(eventId);
-
-  if (!event) {
-    throw new ApiError(404, 'Event not found');
-  }
-
-  return event;
-}
-
 async function hardDelete(id) {
-  // Permanently removes the event and its DB row — irreversible.
-  // Unlike archive(), this does not set a status flag; the record is gone.
   const deletedEvent = await Event.findByIdAndDelete(id);
   return deletedEvent;
 }
@@ -488,5 +601,3 @@ module.exports = {
   getEventById,
   hardDelete
 };
-
-

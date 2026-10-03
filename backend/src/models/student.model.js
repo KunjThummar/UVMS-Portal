@@ -23,6 +23,12 @@ const studentSchema = new mongoose.Schema(
             trim: true
         },
 
+        mobileNumber: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
         passwordHash: {
             type: String,
             required: true
@@ -60,4 +66,4 @@ const studentSchema = new mongoose.Schema(
 studentSchema.index({ instituteId: 1 });
 studentSchema.index({ departmentId: 1 });
 
-module.exports = mongoose.model("Student", studentSchema);
+module.exports = mongoose.models.Student || mongoose.model("Student", studentSchema);

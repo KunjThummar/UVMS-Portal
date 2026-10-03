@@ -145,7 +145,23 @@ Core entity. `eventLevel` determines which of `targetInstituteId` /
   _id: ObjectId,
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true },
-  eventDate: { type: Date, required: true },
+  eventDate: { type: Date, required: true }, // start date & time
+  eventEndDate: { type: Date, required: true }, // end date & time
+  academicYear: { type: String, required: true, match: /^\d{4}-\d{2}$/ }, // e.g., '2026-27'
+  organizer: { type: String, required: true, trim: true }, // Name of organizing institute
+  subOrganizer: { type: String, trim: true, default: '' }, // Name of organizing department
+  eventType: {
+    type: String,
+    enum: ['Seminar', 'Workshop', 'NSS', 'Hackathon', 'Hackthon', 'Expert Lecture'],
+    required: true
+  },
+  eventMode: {
+    type: String,
+    enum: ['offline', 'online'],
+    default: 'offline',
+    required: true
+  },
+  eventDay: { type: Number, default: 1 }, // calculated day count between eventDate and eventEndDate
   applicationDeadline: { type: Date, required: true },
   volunteerCapacity: { type: Number, required: true, min: 1 },
   approvedCount: { type: Number, default: 0 }, // denormalized counter, see note below
@@ -157,7 +173,7 @@ Core entity. `eventLevel` determines which of `targetInstituteId` /
   },
 
   // populated only if eventLevel === 'Institute'
-  targetInstituteId: { type: ObjectId, ref: 'Institute', default: null },
+  targetInstituteIds: [{ type: ObjectId, ref: 'Institute' }],
 
   // populated only if eventLevel === 'Department'
   // supports multiple departments, possibly across different institutes
@@ -165,7 +181,7 @@ Core entity. `eventLevel` determines which of `targetInstituteId` /
 
   status: {
     type: String,
-    enum: ['Open', 'Full', 'ApplicationClosed', 'Completed', 'Archived'],
+    enum: ['Open', 'ApplicationClosed', 'Completed'],
     default: 'Open'
   },
   isArchived: { type: Boolean, default: false }, // manual flag, protects from auto-cleanup job
@@ -177,8 +193,7 @@ Core entity. `eventLevel` determines which of `targetInstituteId` /
 }
 ```
 
-**Indexes:** `createdBy`, `eventLevel`, `status`, `applicationDeadline`,
-`targetInstituteId`, `targetDepartmentIds` (multikey index)
+**Indexes:** `createdBy`, `eventLevel`, `status`, `applicationDeadline`, `eventDate`, `eventEndDate`, `academicYear`, `eventType`, `eventMode`, `organizer`, `targetInstituteIds`, `targetDepartmentIds` (multikey index)
 
 **Design notes:**
 - **`approvedCount`** is a denormalized running total of Approved

@@ -82,7 +82,8 @@ async function getApplicationsForEvent(req, res) {
   try {
     const event = await eventService.getEventById(req.params.id);
 
-    if (event.createdBy.toString() !== req.user.id.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (creatorId !== req.user.id.toString()) {
       throw new ApiError(403, 'You are not authorized to view applications for this event');
     }
 
@@ -98,7 +99,8 @@ async function getApplicationsForEvent(req, res) {
 
 async function approveApplication(req, res) {
   try {
-    const application = applicationService.approveApplication(req.params.applicationId, req.user.id);
+    const appId = req.params.id || req.params.applicationId;
+    const application = await applicationService.approveApplication(appId, req.user.id);
     return res.status(200).json({ success: true, data: application });
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -108,7 +110,8 @@ async function approveApplication(req, res) {
 
 async function rejectApplication(req, res) {
   try {
-    const application = applicationService.rejectApplication(req.params.applicationId, req.user.id);
+    const appId = req.params.id || req.params.applicationId;
+    const application = await applicationService.rejectApplication(appId, req.user.id);
     return res.status(200).json({ success: true, data: application });
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -120,7 +123,8 @@ async function notifyStudents(req, res) {
   try {
     const event = await eventService.getEventById(req.params.id);
 
-    if (event.createdBy.toString() !== req.user.id.toString()) {
+    const creatorId = (event.createdBy?._id || event.createdBy).toString();
+    if (creatorId !== req.user.id.toString()) {
       throw new ApiError(403, 'You are not authorized to notify students for this event');
     }
 

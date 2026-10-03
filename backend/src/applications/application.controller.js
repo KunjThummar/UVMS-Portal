@@ -101,9 +101,30 @@ const getAll = async (req, res) => {
     }
 };
 
+// ======================================
+// Get Student History (Faculty/Admin)
+// ======================================
+const getStudentHistoryForFaculty = async (req, res) => {
+    try {
+        const historyData = await applicationService.getStudentParticipationHistory(req.params.studentId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Student participation history fetched successfully.",
+            data: historyData
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
     approveApplication,
     rejectApplication,
     getByEvent,
-    getAll
+    getAll,
+    getStudentHistoryForFaculty
 };

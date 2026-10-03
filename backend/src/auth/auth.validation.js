@@ -6,6 +6,8 @@ const UNIVERSITY_STUDENT_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.edu\.in$/;
 
 const UNIVERSITY_FACULTY_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.ac\.in$/;
 
+const MOBILE_NUMBER_REGEX = /^[0-9]{10}$/;
+
 const studentRegisterSchema = Joi.object({
     fullName: Joi.string().trim().required(),
 
@@ -19,6 +21,15 @@ const studentRegisterSchema = Joi.object({
         .messages({
             "string.pattern.base":
                 "Only official university student email is allowed.",
+        }),
+
+    mobileNumber: Joi.string()
+        .trim()
+        .pattern(MOBILE_NUMBER_REGEX)
+        .required()
+        .messages({
+            "string.pattern.base":
+                "Mobile number must be a valid 10-digit number.",
         }),
 
     password: Joi.string().min(6).required(),
@@ -43,6 +54,15 @@ const facultyRegisterSchema = Joi.object({
                 "Only official university faculty email is allowed.",
         }),
 
+    mobileNumber: Joi.string()
+        .trim()
+        .pattern(MOBILE_NUMBER_REGEX)
+        .required()
+        .messages({
+            "string.pattern.base":
+                "Mobile number must be a valid 10-digit number.",
+        }),
+
     password: Joi.string().min(6).required(),
 
     instituteId: objectId.required(),
@@ -60,6 +80,11 @@ const adminSeedSchema = Joi.object({
     fullName: Joi.string().trim().required(),
 
     email: Joi.string().email().trim().lowercase().required(),
+
+    mobileNumber: Joi.string()
+        .trim()
+        .pattern(MOBILE_NUMBER_REGEX)
+        .optional(),
 
     password: Joi.string().min(6).required(),
 
