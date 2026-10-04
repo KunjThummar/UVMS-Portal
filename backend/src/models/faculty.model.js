@@ -16,6 +16,13 @@ const facultySchema = new mongoose.Schema(
             trim: true
         },
 
+        facultyCode:{
+            type: String,
+            required: true,
+            unique: true,
+            trim: true
+        },
+
         mobileNumber: {
             type: String,
             trim: true

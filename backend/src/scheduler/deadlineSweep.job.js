@@ -1,5 +1,5 @@
 const Event = require('../models/event.model');
-const {checkAndCloseIfDeadlinePassed} = require('../events/event.service');
+const {checkAndCloseIfDeadlinePassed , markEventCompletedIfEventDatePassed} = require('../events/event.service');
 
 async function runDeadlineSweep() {
   const now = new Date();
@@ -9,23 +9,43 @@ async function runDeadlineSweep() {
     applicationDeadline: { $lt: now }
   });
 
-  let successCount = 0;
-  let failureCount = 0;
+  const staleApplicationClosedEvents = await Event.find({
+    status : 'ApplicationClosed',
+    eventEndDate : { $lt: now }
+  })
+
+  let successCountStaleOpen = 0;
+  let failureCountStaleOpen = 0;
+  let successCountStaleApplicationClosed = 0;
+  let failureCountStaleApplicationClosed = 0;
 
   for (const event of staleOpenEvents) {
     try {
       await checkAndCloseIfDeadlinePassed(event._id);
-      successCount++;
+      successCountStaleOpen++;
     } catch (err) {
-      failureCount++;
+      failureCountStaleOpen++;
       console.error(`Deadline sweep: failed to close event ${event._id}: ${err.message}`);
     }
   }
 
+  for(const event of staleApplicationClosedEvents){
+    try {
+      await markEventCompletedIfEventDatePassed(event._id);
+      successCountStaleApplicationClosed++;
+    } catch (err) {
+      failureCountStaleApplicationClosed++;
+      console.error(`Deadline sweep : failed to mark event to completed ${event._id}: ${err.message}`);
+    }
+  }
+
   return {
-    totalFound: staleOpenEvents.length,
-    successCount,
-    failureCount
+    totalFoundStaleOpen: staleOpenEvents.length,
+    totalFoundStaleApplicationClosed : staleApplicationClosedEvents.length,
+    successCountStaleOpen,
+    successCountStaleApplicationClosed,
+    failureCountStaleOpen,
+    failureCountStaleApplicationClosed
   };
 }
 

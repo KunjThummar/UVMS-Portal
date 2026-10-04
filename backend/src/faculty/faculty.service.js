@@ -17,7 +17,7 @@ const listAll = async (filters = {}) => {
 };
 
 const create = async (data) => {
-    const { fullName, email, mobileNumber, password, instituteId, departmentId } = data;
+    const { fullName, email, mobileNumber, password, instituteId, departmentId, facultyCode } = data;
 
     const existingEmail = await Faculty.findOne({ email });
     if (existingEmail) {
@@ -40,6 +40,7 @@ const create = async (data) => {
         const faculty = new Faculty({
             fullName,
             email,
+            facultyCode,
             mobileNumber,
             passwordHash,
             instituteId,
