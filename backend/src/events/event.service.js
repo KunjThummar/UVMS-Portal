@@ -168,8 +168,6 @@ async function getEventById(eventId) {
   return event;
 }
 
-const getFacultyEventById = getEventById;
-
 async function getEventForStudent(eventId, studentId) {
   const event = await getEventById(eventId);
   const student = await Student.findById(studentId);
