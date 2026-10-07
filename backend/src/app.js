@@ -18,7 +18,14 @@ const app = express();
 
 // Global Middlewares
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'https://uvms-portal-frontend-cyeldte16-kunjthummars-projects.vercel.app'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Root Route
