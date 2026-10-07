@@ -21,7 +21,7 @@ app.use(helmet());
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        'https://uvms-portal-frontend-cyeldte16-kunjthummars-projects.vercel.app'
+        'https://uvms-frontend.onrender.com'
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
