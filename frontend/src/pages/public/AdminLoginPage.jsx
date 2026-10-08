@@ -39,20 +39,16 @@ export const AdminLoginPage = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc' }}>
+    <div className="auth-page-container">
       {/* Left Pane - Campus Background */}
-      <div style={{
-        flex: '1',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '48px',
-        position: 'relative',
-        backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.95) 100%), url(${campusImg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        color: '#ffffff'
-      }} className="auth-campus-pane">
+      <div 
+        className="auth-campus-pane"
+        style={{
+          backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.95) 100%), url(${campusImg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#e2e8f0', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
           <ArrowLeft size={16} /> Back to University Home
         </Link>
@@ -86,20 +82,18 @@ export const AdminLoginPage = () => {
       </div>
 
       {/* Right Pane - Form */}
-      <div style={{
-        width: '100%',
-        maxWidth: '520px',
-        background: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '48px 40px',
-        boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.05)'
-      }}>
-        <div style={{ marginBottom: '32px' }}>
-          <img src={logoImg} alt="CHARUSAT" style={{ height: '48px', objectFit: 'contain', marginBottom: '20px' }} />
-          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>Administrator Login</h2>
-          <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+      <div className="auth-form-pane">
+        {/* Mobile Back Link */}
+        <div className="show-on-mobile" style={{ marginBottom: '20px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', fontWeight: 600 }}>
+            <ArrowLeft size={15} /> Home
+          </Link>
+        </div>
+
+        <div style={{ marginBottom: '28px' }}>
+          <img src={logoImg} alt="CHARUSAT" style={{ height: '42px', objectFit: 'contain', marginBottom: '16px' }} />
+          <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>Administrator Login</h2>
+          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
             Authorized administrative personnel only.
           </p>
         </div>
@@ -174,7 +168,7 @@ export const AdminLoginPage = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '13px' }}>
+        <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '13px', flexWrap: 'wrap' }}>
           <Link to="/login/student" style={{ color: '#2563eb', fontWeight: 600 }}>← Student Login</Link>
           <Link to="/login/faculty" style={{ color: '#64748b' }}>Faculty Login →</Link>
         </div>

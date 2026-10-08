@@ -147,20 +147,16 @@ export const StudentRegisterPage = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc' }}>
+    <div className="auth-page-container">
       {/* Left Pane - Campus Background */}
-      <div style={{
-        flex: '1',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '48px',
-        position: 'relative',
-        backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 58, 138, 0.88) 100%), url(${campusImg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        color: '#ffffff'
-      }} className="auth-campus-pane">
+      <div 
+        className="auth-campus-pane"
+        style={{
+          backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 58, 138, 0.88) 100%), url(${campusImg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#e2e8f0', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
           <ArrowLeft size={16} /> Back to University Home
         </Link>
@@ -195,21 +191,17 @@ export const StudentRegisterPage = () => {
       </div>
 
       {/* Right Pane - Registration Form */}
-      <div style={{
-        width: '100%',
-        maxWidth: '580px',
-        background: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '40px',
-        boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.05)',
-        overflowY: 'auto',
-        maxHeight: '100vh'
-      }}>
-        <div style={{ marginBottom: '24px' }}>
-          <img src={logoImg} alt="CHARUSAT" style={{ height: '42px', objectFit: 'contain', marginBottom: '16px' }} />
-          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>Student Registration</h2>
+      <div className="auth-form-pane" style={{ maxWidth: '620px' }}>
+        {/* Mobile Back Link */}
+        <div className="show-on-mobile" style={{ marginBottom: '16px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', fontWeight: 600 }}>
+            <ArrowLeft size={15} /> Home
+          </Link>
+        </div>
+
+        <div style={{ marginBottom: '22px' }}>
+          <img src={logoImg} alt="CHARUSAT" style={{ height: '38px', objectFit: 'contain', marginBottom: '12px' }} />
+          <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>Student Registration</h2>
           <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
             Fill in your university academic and contact details to register.
           </p>
@@ -250,7 +242,7 @@ export const StudentRegisterPage = () => {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Full Name & Student ID */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-grid-2">
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Full Name *</label>
                   <div style={{ position: 'relative' }}>
@@ -287,7 +279,7 @@ export const StudentRegisterPage = () => {
               </div>
 
               {/* Email & Mobile Number */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-grid-2">
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">University Email *</label>
                   <div style={{ position: 'relative' }}>
@@ -325,7 +317,7 @@ export const StudentRegisterPage = () => {
               </div>
 
               {/* Institute & Department Cascading Selection */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-grid-2">
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Institute *</label>
                   <select
@@ -360,7 +352,7 @@ export const StudentRegisterPage = () => {
                     ) : isLoadingDepts ? (
                       <option value="">Loading departments...</option>
                     ) : departments.length === 0 ? (
-                      <option value="">No departments found for this institute</option>
+                      <option value="">No departments found</option>
                     ) : (
                       <option value="">Select Department</option>
                     )}
@@ -390,7 +382,7 @@ export const StudentRegisterPage = () => {
               </div>
 
               {/* Password & Confirm Password */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-grid-2">
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Password *</label>
                   <div style={{ position: 'relative' }}>

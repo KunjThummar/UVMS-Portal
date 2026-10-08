@@ -180,8 +180,8 @@ export const FacultyApplicationsPage = () => {
       </div>
 
       {/* Status Filter Tabs & Search Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {['All', 'Pending', 'Approved', 'Rejected'].map((tab) => (
             <button
               key={tab}
@@ -203,7 +203,7 @@ export const FacultyApplicationsPage = () => {
           ))}
         </div>
 
-        <div style={{ position: 'relative', width: '280px' }}>
+        <div style={{ position: 'relative', width: '280px', maxWidth: '100%', flex: '1 1 200px' }}>
           <input
             type="text"
             className="form-input"

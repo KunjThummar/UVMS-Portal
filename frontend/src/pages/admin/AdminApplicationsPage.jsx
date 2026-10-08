@@ -121,7 +121,7 @@ export const AdminApplicationsPage = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <select
                 className="form-select"
-                style={{ flex: 1, minWidth: '320px', fontSize: '14px', padding: '10px 14px', borderColor: selectedEventId ? '#2563eb' : '#cbd5e1' }}
+                style={{ flex: 1, minWidth: 'min(320px, 100%)', fontSize: '14px', padding: '10px 14px', borderColor: selectedEventId ? '#2563eb' : '#cbd5e1' }}
                 value={selectedEventId}
                 onChange={(e) => handleEventChange(e.target.value)}
                 disabled={isLoadingEvents}

@@ -70,6 +70,7 @@ export const PastHistoryModal = ({ isOpen, onClose, student, pastParticipations 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
                 gap: '12px'
               }}
             >
