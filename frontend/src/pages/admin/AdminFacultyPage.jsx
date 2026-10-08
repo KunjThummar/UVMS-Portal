@@ -189,7 +189,7 @@ export const AdminFacultyPage = () => {
                   </td>
                   <td>
                     <span style={{ fontSize: '13px', color: '#334155' }}>
-                      {fac.instituteId?.code || 'CSPIT'} • {fac.departmentId?.name || 'Department'}
+                      {fac.instituteId?.code || '—'} • {fac.departmentId?.name || '—'}
                     </span>
                   </td>
                   <td>

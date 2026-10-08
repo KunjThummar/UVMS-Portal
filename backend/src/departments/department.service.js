@@ -8,7 +8,9 @@ const ApiError = require('../utils/ApiError');
 async function getAll(instituteId){
     try {
         const filter = instituteId ? {instituteId} : {};
-        const departments = await Department.find(filter).sort({name : 1});
+        const departments = await Department.find(filter)
+            .populate('instituteId', 'name code')
+            .sort({name : 1});
         return departments;
     } catch (error) {
         throw new ApiError(500, 'Failed to fetch departments: ' + error.message);
@@ -34,7 +36,8 @@ async function create(data){
     }
     try {
         const department = new Department({name , code , instituteId});
-        return await department.save();
+        await department.save();
+        return await Department.findById(department._id).populate('instituteId', 'name code');
     } catch (error) {
         if(error.code === 11000){
             throw new ApiError(409, 'A department with given code or name already exists in the institute');
@@ -65,7 +68,7 @@ async function update(id, data) {
       id,
       { name, code, instituteId },
       { new: true, runValidators: true }
-    );
+    ).populate('instituteId', 'name code');
     return department; 
   } catch (err) {
     if (err.code === 11000) {

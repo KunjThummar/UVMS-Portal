@@ -96,6 +96,18 @@ export const AdminDepartmentsPage = () => {
     }
   };
 
+  const getInstituteDisplay = (dept) => {
+    if (dept.instituteId && typeof dept.instituteId === 'object' && dept.instituteId.code) {
+      return `${dept.instituteId.code} - ${dept.instituteId.name || ''}`;
+    }
+    const instId = dept.instituteId?._id || dept.instituteId;
+    const inst = institutes.find((i) => i._id === instId);
+    if (inst) {
+      return `${inst.code} - ${inst.name || ''}`;
+    }
+    return '—';
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -167,7 +179,7 @@ export const AdminDepartmentsPage = () => {
                   </td>
                   <td>
                     <span style={{ fontSize: '13px', color: '#475569' }}>
-                      {dept.instituteId?.code || 'CSPIT'} - {dept.instituteId?.name}
+                      {getInstituteDisplay(dept)}
                     </span>
                   </td>
                   <td>

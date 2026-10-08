@@ -84,7 +84,7 @@ export const StudentDashboardPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: '#dbeafe' }}>
             <span><strong>ID:</strong> {profile?.studentId || user?.studentId}</span>
             <span>•</span>
-            <span>{profile?.instituteId?.code || 'CSPIT'} • {profile?.departmentId?.name || 'Department'}</span>
+            <span>{profile?.instituteId?.code || '—'} • {profile?.departmentId?.name || '—'}</span>
             <span>•</span>
             <span>Semester {profile?.semester}</span>
             <span>•</span>

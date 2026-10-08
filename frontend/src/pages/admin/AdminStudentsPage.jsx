@@ -206,7 +206,7 @@ export const AdminStudentsPage = () => {
                   </td>
                   <td>
                     <span style={{ fontSize: '13px', color: '#334155' }}>
-                      {st.instituteId?.code || 'CSPIT'} • {st.departmentId?.name || 'CE'}
+                      {st.instituteId?.code || '—'} • {st.departmentId?.name || '—'}
                     </span>
                   </td>
                   <td style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
