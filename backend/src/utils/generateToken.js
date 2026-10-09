@@ -13,4 +13,20 @@ const generateToken = (id, role) => {
   );
 };
 
-module.exports = generateToken;
+const generateResetPasswordToken = (id, role , purpose) => {
+  return jwt.sign(
+    {
+      id,
+      role,
+      purpose
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+    }
+  );
+};
+
+
+
+module.exports = {generateToken , generateResetPasswordToken}

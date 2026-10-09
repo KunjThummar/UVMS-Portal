@@ -1,6 +1,7 @@
 const studentService = require("./student.service");
 const eventService = require("../events/event.service");
 const applicationService = require("../applications/application.service");
+const resetPassword = require('../utils/resetPassword');
 const { validateApply } = require("../applications/application.validation");
 
 // ======================================
@@ -164,6 +165,20 @@ const getParticipationHistory = async (req, res) => {
         });
     }
 };
+
+const resetStudentPassword = async(res , req) => {
+    try {
+        const token = req.query;
+        const newPassword = req.body
+        resetPassword(newPassword , token);
+
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
 
 module.exports = {
     getProfile,
