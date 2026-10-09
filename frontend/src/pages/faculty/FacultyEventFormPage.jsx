@@ -408,7 +408,7 @@ export const FacultyEventFormPage = () => {
           </div>
 
           {/* Event Classification & Mode */}
-          <div className="form-grid-2">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Event Type *</label>
               <select
@@ -444,7 +444,7 @@ export const FacultyEventFormPage = () => {
           </div>
 
           {/* Organizing Institute & Department */}
-          <div className="form-grid-2">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Organizer (Institute) *</label>
               <select
@@ -493,7 +493,7 @@ export const FacultyEventFormPage = () => {
           </div>
 
           {/* Dates: Event Start Date, Event End Date & Application Deadline */}
-          <div className="form-grid-3">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Event Start Date & Time *</label>
               <input
@@ -568,7 +568,7 @@ export const FacultyEventFormPage = () => {
           )}
 
           {/* Volunteer Capacity & Event Level */}
-          <div className="form-grid-2">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Volunteer Capacity Target *</label>
               <input

@@ -56,7 +56,7 @@ export const ApplyModal = ({ isOpen, onClose, event, onApplicationSuccess }) => 
             <UserCheck size={16} color="#2563eb" />
             <span>Applicant Profile Details</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px', marginTop: '4px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
             <span><strong>Name:</strong> {user?.fullName}</span>
             <span><strong>ID:</strong> {user?.studentId}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

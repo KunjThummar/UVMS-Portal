@@ -12,12 +12,10 @@ import {
   Building2,
   Building,
   GraduationCap,
-  Compass,
-  X
+  Compass
 } from 'lucide-react';
-import logoImg from '../../assets/logo.png';
 
-export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
+export const Sidebar = ({ isCollapsed }) => {
   const { role } = useAuth();
   const normalizedRole = role ? role.toLowerCase() : '';
 
@@ -60,51 +58,17 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
   const navLinks = getNavLinks();
 
   return (
-    <aside 
-      className={`sidebar-drawer ${isMobileOpen ? 'mobile-open' : ''}`}
-      style={{
-        width: isCollapsed ? '76px' : '240px',
-        background: '#ffffff',
-        borderRight: '1px solid #e2e8f0',
-        transition: 'width 0.25s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '20px 12px',
-        gap: '6px',
-        flexShrink: 0
-      }}
-    >
-      {/* Mobile-Only Drawer Header */}
-      <div 
-        className="show-on-mobile-flex" 
-        style={{ 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          padding: '0 8px 16px 8px', 
-          marginBottom: '8px', 
-          borderBottom: '1px solid #e2e8f0' 
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src={logoImg} alt="CHARUSAT" style={{ height: '32px', objectFit: 'contain' }} />
-          <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>CHARUSAT UVMS</span>
-        </div>
-        <button 
-          onClick={onCloseMobile}
-          style={{ 
-            padding: '6px', 
-            borderRadius: '6px', 
-            color: '#64748b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Close Navigation"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
+    <aside style={{
+      width: isCollapsed ? '76px' : '240px',
+      background: '#ffffff',
+      borderRight: '1px solid #e2e8f0',
+      transition: 'width 0.25s ease',
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '20px 12px',
+      gap: '6px',
+      flexShrink: 0
+    }}>
       {navLinks.map((item) => {
         const Icon = item.icon;
         return (
@@ -112,9 +76,6 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
             key={item.to}
             to={item.to}
             end={item.to.endsWith('/dashboard') || item.to === '/admin/dashboard'}
-            onClick={() => {
-              if (onCloseMobile) onCloseMobile();
-            }}
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
@@ -132,17 +93,11 @@ export const Sidebar = ({ isCollapsed, isMobileOpen, onCloseMobile }) => {
             title={item.label}
           >
             <Icon size={20} style={{ flexShrink: 0 }} />
-            <span 
-              className={isCollapsed ? 'hide-on-desktop-only' : ''}
-              style={{ 
-                whiteSpace: 'nowrap', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis',
-                display: isCollapsed ? 'none' : 'inline'
-              }}
-            >
-              {item.label}
-            </span>
+            {!isCollapsed && (
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {item.label}
+              </span>
+            )}
           </NavLink>
         );
       })}

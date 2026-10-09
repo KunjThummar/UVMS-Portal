@@ -18,76 +18,79 @@ export const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
     const r = role.toLowerCase();
     if (r === 'student') {
       return (
-        <span 
-          className="navbar-role-badge"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: '#eff6ff',
-            color: '#2563eb',
-            border: '1px solid #bfdbfe',
-            padding: '4px 10px',
-            borderRadius: '9999px',
-            fontSize: '12px',
-            fontWeight: 600
-          }}
-        >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: '#eff6ff',
+          color: '#2563eb',
+          border: '1px solid #bfdbfe',
+          padding: '4px 10px',
+          borderRadius: '9999px',
+          fontSize: '12px',
+          fontWeight: 600
+        }}>
           <GraduationCap size={14} /> Student Portal
         </span>
       );
     }
     if (r === 'faculty') {
       return (
-        <span 
-          className="navbar-role-badge"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: '#faf5ff',
-            color: '#7c3aed',
-            border: '1px solid #ddd6fe',
-            padding: '4px 10px',
-            borderRadius: '9999px',
-            fontSize: '12px',
-            fontWeight: 600
-          }}
-        >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: '#faf5ff',
+          color: '#7c3aed',
+          border: '1px solid #ddd6fe',
+          padding: '4px 10px',
+          borderRadius: '9999px',
+          fontSize: '12px',
+          fontWeight: 600
+        }}>
           <Briefcase size={14} /> Faculty Portal
         </span>
       );
     }
     return (
-      <span 
-        className="navbar-role-badge"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          background: '#fef2f2',
-          color: '#dc2626',
-          border: '1px solid #fecaca',
-          padding: '4px 10px',
-          borderRadius: '9999px',
-          fontSize: '12px',
-          fontWeight: 600
-        }}
-      >
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        background: '#fef2f2',
+        color: '#dc2626',
+        border: '1px solid #fecaca',
+        padding: '4px 10px',
+        borderRadius: '9999px',
+        fontSize: '12px',
+        fontWeight: 600
+      }}>
         <Shield size={14} /> Administrator
       </span>
     );
   };
 
   return (
-    <header className="navbar-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <header style={{
+      height: '70px',
+      background: '#ffffff',
+      borderBottom: '1px solid #e2e8f0',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 24px',
+      position: 'sticky',
+      top: 0,
+      zIndex: 100,
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
         <button
           onClick={onToggleSidebar}
           style={{
             background: 'none',
             border: 'none',
-            padding: '6px',
+            padding: '8px',
             borderRadius: '8px',
             cursor: 'pointer',
             display: 'flex',
@@ -102,33 +105,33 @@ export const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
           </svg>
         </button>
 
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <img src={logoImg} alt="CHARUSAT" style={{ height: '36px', objectFit: 'contain' }} />
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '14px', textDecoration: 'none' }}>
+          <img src={logoImg} alt="CHARUSAT" style={{ height: '42px', objectFit: 'contain' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
               CHARUSAT UVMS
             </span>
-            <span className="navbar-subtext" style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
               Volunteer Management System
             </span>
           </div>
         </Link>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {getRoleBadge()}
 
         {user && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            paddingLeft: '8px',
+            gap: '10px',
+            paddingLeft: '12px',
             borderLeft: '1px solid #e2e8f0'
           }}>
             <div style={{
-              width: '34px',
-              height: '34px',
+              width: '36px',
+              height: '36px',
               borderRadius: '50%',
               background: '#eff6ff',
               color: '#2563eb',
@@ -136,10 +139,9 @@ export const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 700,
-              fontSize: '13px',
-              flexShrink: 0
+              fontSize: '14px'
             }}>
-              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon size={16} />}
+              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon size={18} />}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }} className="user-text-hide">
               <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
@@ -160,13 +162,12 @@ export const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
             color: '#dc2626',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '5px',
-            padding: '6px 10px'
+            gap: '6px'
           }}
           title="Sign out of account"
         >
-          <LogOut size={14} />
-          <span className="hide-on-mobile">Logout</span>
+          <LogOut size={15} />
+          <span>Logout</span>
         </button>
       </div>
     </header>
