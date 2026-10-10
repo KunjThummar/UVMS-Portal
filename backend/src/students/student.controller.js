@@ -1,7 +1,6 @@
 const studentService = require("./student.service");
 const eventService = require("../events/event.service");
 const applicationService = require("../applications/application.service");
-const resetPassword = require('../utils/resetPassword');
 const { validateApply } = require("../applications/application.validation");
 
 // ======================================
