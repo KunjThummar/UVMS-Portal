@@ -8,8 +8,8 @@ export const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 

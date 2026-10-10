@@ -19,7 +19,7 @@ const studentRegisterSchema = Joi.object({
         .pattern(UNIVERSITY_STUDENT_EMAIL_REGEX)
         .required()
         .messages({
-            "string.pattern.base":
+            "string.pattern.base":  
                 "Only official university student email is allowed.",
         }),
 

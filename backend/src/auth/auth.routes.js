@@ -8,6 +8,7 @@ const {
   registerFaculty,
   loginFaculty,
   loginAdmin,
+  logout,
   getMe,
 } = require("./auth.controller");
 
@@ -36,5 +37,10 @@ router.post("/admin/login", loginAdmin);
 // Current Logged-in User
 // ===============================
 router.get("/me", authenticate, getMe);
+
+// ===============================
+// Logout Route
+// ===============================
+router.post("/logout", logout);
 
 module.exports = router;

@@ -23,6 +23,7 @@ app.use(cors({
         'http://localhost:5173',
         'https://uvms-frontend.onrender.com'
     ],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

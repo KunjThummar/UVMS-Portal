@@ -34,6 +34,12 @@ export const authService = {
     const res = await axiosInstance.get('/auth/me');
     return res.data;
   },
+
+  // Logout
+  logout: async () => {
+    const res = await axiosInstance.post('/auth/logout');
+    return res.data;
+  },
 };
 
 export default authService;

@@ -53,14 +53,20 @@ export const AuthProvider = ({ children }) => {
     setRole(authRole || null);
   };
 
-  const logout = () => {
-    localStorage.removeItem('uvms_token');
-    localStorage.removeItem('uvms_role');
-    localStorage.removeItem('uvms_user');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      // Ignore network errors on logout to allow clean local reset
+    } finally {
+      localStorage.removeItem('uvms_token');
+      localStorage.removeItem('uvms_role');
+      localStorage.removeItem('uvms_user');
 
-    setToken(null);
-    setUser(null);
-    setRole(null);
+      setToken(null);
+      setUser(null);
+      setRole(null);
+    }
   };
 
   const updateUser = (updatedUser) => {
