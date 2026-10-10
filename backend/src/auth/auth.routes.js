@@ -10,6 +10,8 @@ const {
   loginAdmin,
   logout,
   getMe,
+  forgotPassword,
+  resetPassword,
 } = require("./auth.controller");
 
 const authenticate = require("../middleware/authenticate");
@@ -42,5 +44,11 @@ router.get("/me", authenticate, getMe);
 // Logout Route
 // ===============================
 router.post("/logout", logout);
+
+// ===============================
+// Password Reset Routes
+// ===============================
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 module.exports = router;
