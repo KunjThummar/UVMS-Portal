@@ -40,6 +40,20 @@ export const authService = {
     const res = await axiosInstance.post('/auth/logout');
     return res.data;
   },
+
+  // Forgot Password (sends email link)
+  forgotPassword: async (email) => {
+    const res = await axiosInstance.post('/auth/forgot-password', { email });
+    return res.data;
+  },
+
+  // Reset Password (submits new password with token)
+  resetPassword: async (token, newPassword) => {
+    const res = await axiosInstance.post(`/auth/reset-password?token=${encodeURIComponent(token)}`, {
+      newPassword,
+    });
+    return res.data;
+  },
 };
 
 export default authService;

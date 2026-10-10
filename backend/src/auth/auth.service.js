@@ -1,11 +1,16 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const Student = require("../models/student.model");
 const Faculty = require("../models/faculty.model");
 const Administrator = require("../models/admin.model");
 
 const ApiError = require("../utils/ApiError");
-const generateToken = require("../utils/generateToken");
+const { generateToken, generateResetPasswordToken } = require("../utils/generateToken");
+const { sendResetPasswordMail } = require("../notifications/email.service");
+
+const UNIVERSITY_STUDENT_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.edu\.in$/;
+const UNIVERSITY_FACULTY_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@charusat\.ac\.in$/;
 
 // ====================
 // REGISTER STUDENT //
@@ -254,6 +259,86 @@ const getProfileByRole = async (id, role) => {
     return profile;
 };
 
+
+// ====================
+// FORGOT PASSWORD
+// ====================
+const forgotPassword = async (email) => {
+    if (!email) {
+        throw new ApiError(400, "Email is required.");
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    let Model;
+    let role;
+
+    if (UNIVERSITY_FACULTY_EMAIL_REGEX.test(normalizedEmail)) {
+        Model = Faculty;
+        role = "faculty";
+    } else if (UNIVERSITY_STUDENT_EMAIL_REGEX.test(normalizedEmail)) {
+        Model = Student;
+        role = "student";
+    } else {
+        throw new ApiError(
+            400,
+            "Please enter your official college email (@charusat.edu.in or @charusat.ac.in)."
+        );
+    }
+
+    const user = await Model.findOne({ email: normalizedEmail });
+
+    // Silent return if user does not exist (prevents account enumeration attacks)
+    if (!user) {
+        console.info(`Password reset requested for non-existing email: ${normalizedEmail}`);
+        return;
+    }
+
+    try {
+        const token = generateResetPasswordToken(user._id, role, "reset password");
+        await sendResetPasswordMail(normalizedEmail, token);
+    } catch (error) {
+        console.error("Failed to send reset email:", error.message);
+        throw new ApiError(500, "Failed to send reset email. Please try again later.");
+    }
+};
+
+// ====================
+// RESET PASSWORD
+// ====================
+const resetPassword = async (token, newPassword) => {
+    if (!token || !newPassword) {
+        throw new ApiError(400, "Reset token and new password are required.");
+    }
+
+    let payload;
+    try {
+        payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        throw new ApiError(400, "Invalid or expired reset link.");
+    }
+
+    if (payload.purpose !== "reset password") {
+        throw new ApiError(400, "Invalid or expired reset link.");
+    }
+
+    const Model = payload.role === "faculty" ? Faculty : Student;
+    const user = await Model.findById(payload.id);
+
+    if (!user) {
+        throw new ApiError(400, "Invalid or expired reset link.");
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return { message: "Password updated successfully." };
+};
+
+
+
+
+
 module.exports = {
     registerStudent,
     loginStudent,
@@ -261,4 +346,6 @@ module.exports = {
     loginFaculty,
     loginAdmin,
     getProfileByRole,
+    forgotPassword,
+    resetPassword,
 };

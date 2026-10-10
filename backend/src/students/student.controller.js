@@ -166,20 +166,6 @@ const getParticipationHistory = async (req, res) => {
     }
 };
 
-const resetStudentPassword = async(res , req) => {
-    try {
-        const token = req.query;
-        const newPassword = req.body
-        resetPassword(newPassword , token);
-
-    } catch (error) {
-        res.status(error.statusCode || 500).json({
-            success : false,
-            message : error.message
-        })
-    }
-}
-
 module.exports = {
     getProfile,
     getEligibleEvents,

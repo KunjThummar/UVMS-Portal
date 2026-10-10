@@ -228,6 +228,60 @@ const getMe = async (req, res) => {
     }
 };
 
+//forgot Password
+
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required.",
+            });
+        }
+        await authService.forgotPassword(email);
+        return res.status(200).json({
+            success: true,
+            message: "Password reset link has been sent.",
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+//reset password
+const resetPassword = async (req, res) => {
+    try {
+        const token = req.query.token || req.body.token;
+        const { newPassword } = req.body;
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                message: "Reset token is required.",
+            });
+        }
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 6 characters long.",
+            });
+        }
+        await authService.resetPassword(token, newPassword);
+        return res.status(200).json({
+            success: true,
+            message: "Password reset successful. Please login with your new password.",
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 400).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 module.exports = {
     registerStudent,
     loginStudent,
@@ -236,4 +290,6 @@ module.exports = {
     loginAdmin,
     logout,
     getMe,
+    forgotPassword,
+    resetPassword,
 };

@@ -495,7 +495,79 @@ async function notifyEligibleStudents(event) {
   return recipients.length;
 }
 
+
+// ==========================================
+// SEND PASSWORD RESET EMAIL
+// ==========================================
+async function sendResetPasswordMail(toEmail, token) {
+  if (!toEmail || !token) {
+    throw new ApiError(400, "Recipient email and reset token are required.");
+  }
+
+  // Uses CLIENT_URL from Render (e.g. https://your-frontend.onrender.com) or fallback
+  const clientBaseUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const resetLink = `${clientBaseUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Your Password</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: Arial, sans-serif; color: #1f2937;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f6f8; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background-color: #2563eb; padding: 24px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 22px;">UVMS Portal</h1>
+              <p style="margin: 4px 0 0; color: #dbeafe; font-size: 14px;">Password Reset Request</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px;">
+              <p style="font-size: 15px; margin: 0 0 16px;">Hello,</p>
+              <p style="font-size: 15px; line-height: 1.5; margin: 0 0 24px; color: #4b5563;">
+                We received a request to reset your password. Click the button below to choose a new password:
+              </p>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${resetLink}" target="_blank" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                  Reset Password
+                </a>
+              </div>
+              <p style="font-size: 13px; color: #6b7280; margin: 24px 0 8px;">
+                Or copy and paste this link into your browser:
+              </p>
+              <p style="font-size: 12px; word-break: break-all; margin: 0 0 24px;">
+                <a href="${resetLink}" target="_blank" style="color: #2563eb;">${resetLink}</a>
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                This link will expire in 1 day. If you did not make this request, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  return sendMail({
+    to: toEmail,
+    subject: "UVMS Portal - Password Reset Request",
+    html,
+  });
+}
+
+
 module.exports = {
   sendMail,
-  notifyEligibleStudents
+  notifyEligibleStudents,
+  sendResetPasswordMail
 };
