@@ -9,17 +9,32 @@ function buildTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  if (!host || !user || !pass) {
+  if (!user || !pass) {
     throw new Error(
-      "SMTP configuration is missing. Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in .env"
+      "SMTP configuration is missing. Set SMTP_USER and SMTP_PASS in .env"
     );
+  }
+
+  // If using Gmail, use service: 'gmail' to bypass port 587 cloud firewall blocks on Render
+  const isGmail = host === "smtp.gmail.com" || (user && user.endsWith("@gmail.com"));
+  if (isGmail) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+    });
   }
 
   return nodemailer.createTransport({
     host,
     port,
     secure,
-    auth: { user, pass }
+    auth: { user, pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
   });
 }
 
