@@ -60,6 +60,11 @@ export const adminEventService = {
     const res = await axiosInstance.get(url, { responseType: 'blob' });
     return res.data;
   },
+
+  notifyStudents: async (id) => {
+    const res = await axiosInstance.post(`/admin/events/${id}/notify`);
+    return res.data;
+  },
 };
 
 export default adminEventService;

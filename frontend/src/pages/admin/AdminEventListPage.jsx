@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import StatusBadge from '../../components/common/StatusBadge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Loader from '../../components/common/Loader';
-import { Search, Trash2, Archive, Calendar, Users, Eye, ArrowRight, Plus, Edit, FileSpreadsheet } from 'lucide-react';
+import { Search, Trash2, Archive, Calendar, Users, Eye, ArrowRight, Plus, Edit, FileSpreadsheet, Bell } from 'lucide-react';
 
 export const AdminEventListPage = () => {
   const [events, setEvents] = useState([]);
@@ -14,16 +14,12 @@ export const AdminEventListPage = () => {
   const [eventToDelete, setEventToDelete] = useState(null);
   const [eventToArchive, setEventToArchive] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [notifyingEventId, setNotifyingEventId] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState('All');
-  const [selectedExportYear, setSelectedExportYear] = useState('All');
   const [isExporting, setIsExporting] = useState(false);
 
   const { showSuccess, showError } = useToast();
-
-  const defaultYears = ['2026-27'];
-  const eventYears = events.map((e) => e.academicYear).filter(Boolean);
-  const availableAcademicYears = Array.from(new Set([...defaultYears, ...eventYears])).sort().reverse();
 
   const fetchEvents = async (selectedStatus = statusFilter) => {
     setIsLoading(true);
@@ -82,22 +78,33 @@ export const AdminEventListPage = () => {
     }
   };
 
-  const handleExportByAcademicYear = async () => {
+  const handleNotify = async (eventId, title) => {
+    setNotifyingEventId(eventId);
+    try {
+      const res = await adminEventService.notifyStudents(eventId);
+      const count = res.data?.sentCount || 0;
+      showSuccess(`Emails dispatched to ${count} eligible students for "${title}"!`);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to dispatch email notifications';
+      showError(msg);
+    } finally {
+      setNotifyingEventId(null);
+    }
+  };
+
+  const handleExportEvents = async () => {
     setIsExporting(true);
     try {
-      const blobData = await adminEventService.exportEventsExcel(selectedExportYear);
+      const blobData = await adminEventService.exportEventsExcel('All');
       const url = window.URL.createObjectURL(new Blob([blobData]));
       const link = document.createElement('a');
       link.href = url;
-      const yearSuffix = selectedExportYear && selectedExportYear !== 'All'
-        ? `_AY_${selectedExportYear.replace(/[^a-zA-Z0-9_-]/g, '_')}`
-        : '_All_Years';
-      link.setAttribute('download', `UVMS_Events_Report${yearSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      link.setAttribute('download', `UVMS_Events_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-      showSuccess(`Events report (${selectedExportYear === 'All' ? 'All Academic Years' : selectedExportYear}) downloaded successfully.`);
+      showSuccess('Events report downloaded successfully.');
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to download events Excel report';
       showError(msg);
@@ -114,33 +121,17 @@ export const AdminEventListPage = () => {
           <p className="page-subtitle">Inspect all campus events, supervise capacities, create, or manage records.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <select
-              value={selectedExportYear}
-              onChange={(e) => setSelectedExportYear(e.target.value)}
-              className="form-input"
-              style={{ width: 'auto', padding: '8px 12px', fontSize: '13px' }}
-              title="Select Academic Year for Excel Export"
-            >
-              <option value="All">All Academic Years</option>
-              {availableAcademicYears.map((yr) => (
-                <option key={yr} value={yr}>
-                  {yr}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={handleExportByAcademicYear}
-              disabled={isExporting}
-              className="btn btn-secondary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              title="Download Excel file of events for selected academic year"
-            >
-              <FileSpreadsheet size={18} />
-              <span>{isExporting ? 'Exporting...' : 'Download Excel'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleExportEvents}
+            disabled={isExporting}
+            className="btn btn-secondary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            title="Download Excel file of all events"
+          >
+            <FileSpreadsheet size={18} />
+            <span>{isExporting ? 'Exporting...' : 'Download Excel'}</span>
+          </button>
           <Link to="/admin/events/new" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <Plus size={18} />
             <span>Create New Event</span>
@@ -338,6 +329,17 @@ export const AdminEventListPage = () => {
                           <Archive size={14} />
                         </button>
                       )}
+
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        style={{ fontSize: '12px', color: '#7c3aed', borderColor: '#ddd6fe', padding: '5px 8px' }}
+                        onClick={() => handleNotify(ev._id, ev.title)}
+                        disabled={notifyingEventId === ev._id}
+                        title="Dispatch email notification to eligible students"
+                      >
+                        <Bell size={14} />
+                      </button>
 
                       <button
                         type="button"

@@ -55,6 +55,12 @@ export const AdminStudentsPage = () => {
     fetchStudents();
   }, []);
 
+  // Filter departments for the currently selected institute
+  const availableDepartments = departments.filter((dept) => {
+    const instId = dept.instituteId?._id || dept.instituteId;
+    return String(instId) === String(formData.instituteId);
+  });
+
   const handleOpenCreateModal = () => {
     setEditingStudent(null);
     setFormData({
@@ -63,8 +69,8 @@ export const AdminStudentsPage = () => {
       email: '',
       mobileNumber: '',
       password: '',
-      instituteId: institutes[0]?._id || '',
-      departmentId: departments[0]?._id || '',
+      instituteId: '',
+      departmentId: '',
       semester: 1
     });
     setIsFormModalOpen(true);
@@ -83,6 +89,15 @@ export const AdminStudentsPage = () => {
       semester: student.semester || 1
     });
     setIsFormModalOpen(true);
+  };
+
+  const handleInstituteChange = (e) => {
+    const newInstituteId = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      instituteId: newInstituteId,
+      departmentId: '' // Reset department when institute changes
+    }));
   };
 
   const handleFormSubmit = async (e) => {
@@ -321,14 +336,16 @@ export const AdminStudentsPage = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {/* Institute Select */}
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Institute *</label>
               <select
                 className="form-select"
                 value={formData.instituteId}
-                onChange={(e) => setFormData({ ...formData, instituteId: e.target.value })}
+                onChange={handleInstituteChange}
                 required
               >
+                <option value="">-- Select Institute --</option>
                 {institutes.map((inst) => (
                   <option key={inst._id} value={inst._id}>
                     {inst.code} - {inst.name}
@@ -337,19 +354,30 @@ export const AdminStudentsPage = () => {
               </select>
             </div>
 
+            {/* Filtered Department Select */}
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Department *</label>
               <select
                 className="form-select"
                 value={formData.departmentId}
                 onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                disabled={!formData.instituteId}
                 required
               >
-                {departments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
-                    {dept.code} - {dept.name}
-                  </option>
-                ))}
+                {!formData.instituteId ? (
+                  <option value="">-- Select Institute First --</option>
+                ) : availableDepartments.length === 0 ? (
+                  <option value="">No departments available</option>
+                ) : (
+                  <>
+                    <option value="">-- Select Department --</option>
+                    {availableDepartments.map((dept) => (
+                      <option key={dept._id} value={dept._id}>
+                        {dept.code} - {dept.name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
           </div>

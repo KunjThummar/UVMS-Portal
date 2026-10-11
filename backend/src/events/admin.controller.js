@@ -2,6 +2,7 @@ const eventService = require('../events/event.service');
 const applicationService = require('../applications/application.service');
 const {validateCreateEvent , validateUpdateEvent} = require('../events/event.validation');
 const { generateEventsMasterWorkbook } = require('./event.excel.service');
+const { notifyEligibleStudents } = require('../notifications/email.service');
 
 async function getAllEvents(req, res) {
   const filters = req.query;
@@ -167,6 +168,26 @@ async function exportEventsToExcel(req, res) {
   }
 }
 
+async function notifyStudents(req, res) {
+  try {
+    const event = await eventService.getEventById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    const sentCount = await notifyEligibleStudents(event);
+
+    return res.status(200).json({
+      success: true,
+      message: `Notification email sent to ${sentCount} eligible student(s).`,
+      data: { sentCount }
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
     getAllEvents,
     getEventById,
@@ -175,5 +196,6 @@ module.exports = {
     archiveEvent,
     getAllApplications,
     deleteEvent,
-    exportEventsToExcel
+    exportEventsToExcel,
+    notifyStudents
 };

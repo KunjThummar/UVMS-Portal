@@ -9,7 +9,8 @@ const {
   deleteEvent,
   archiveEvent,
   getAllApplications,
-  exportEventsToExcel
+  exportEventsToExcel,
+  notifyStudents
 } = require("../events/admin.controller");
 
 
@@ -26,6 +27,7 @@ router.get("/events/:id", getEventById);
 router.put("/events/:id", updateEvent);
 router.delete("/events/:id", deleteEvent);
 router.patch("/events/:id/archive", archiveEvent);
+router.post("/events/:id/notify", notifyStudents);
 router.get("/applications", getAllApplications);
 
 module.exports = router;

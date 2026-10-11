@@ -70,19 +70,16 @@ function isStudentEligibleForEvent(student, event) {
 
 async function getEligibleEventsForStudent(student, filters = {}) {
   const eligibilityOr = [
-    { eventLevel: 'University' },
+    {
+      eventLevel: 'University',
+    },
     {
       eventLevel: 'Institute',
       targetInstituteIds: student.instituteId,
-      $or: [
-        { targetDepartmentIds: { $exists: false } },
-        { targetDepartmentIds: { $size: 0 } },
-        { targetDepartmentIds: student.departmentId }
-      ]
     },
     {
       eventLevel: 'Department',
-      targetDepartmentIds: student.departmentId
+      targetDepartmentIds: student.departmentId,
     }
   ];
 
