@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const generateEventId = require('../utils/generateEventId');
 
 function calculateAcademicYear(eventDate) {
   if (!eventDate) return '';
@@ -103,9 +104,15 @@ const eventSchema = new Schema({
     trim: true,
     default: ''
   },
+  customEventId: {
+  type: String,
+  unique: true,
+  immutable: true,
+  index: true
+  },
   eventType: {
     type: String,
-    enum: ['Seminar/Webinar', 'Workshop', 'NSS', 'Hackathon', 'Hackthon', 'Expert Lecture' , "other"],
+    enum: ['Seminar/Webinar', 'Workshop', 'NSS', 'Hackathon','Expert Lecture' , "other"],
     required: true
   },
   eventMode: {
@@ -135,14 +142,24 @@ const eventSchema = new Schema({
 });
 
 
-eventSchema.pre('save', function (next) {
+eventSchema.pre('save', async function () {
+  if (this.isNew && !this.customEventId) {
+    this.customEventId = await generateEventId(
+      this.eventDate,
+      this.eventType
+    );
+  }
+
   if (this.eventDate) {
     this.academicYear = calculateAcademicYear(this.eventDate);
   }
+
   if (this.eventDate && this.eventEndDate) {
-    this.eventDay = calculateEventDay(this.eventDate, this.eventEndDate);
+    this.eventDay = calculateEventDay(
+      this.eventDate,
+      this.eventEndDate
+    );
   }
-  next();
 });
 
 // Indexes for fast searching & filtering

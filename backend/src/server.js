@@ -1,5 +1,6 @@
 const { connectToDatabase } = require('./config/db');
 const createDefaultAdmin = require('./utils/createDefaultAdmin');
+const {initScheduler} = require('./scheduler/index');
 
 const PORT = process.env.PORT || 8000;
 
@@ -12,6 +13,7 @@ async function startServer(app) {
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server listening on port ${PORT}`);
         });
+        initScheduler();
     } catch (error) {
         console.error('Failed to start server:', error);
     }
