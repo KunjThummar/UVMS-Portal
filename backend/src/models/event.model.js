@@ -105,7 +105,7 @@ const eventSchema = new Schema({
   },
   eventType: {
     type: String,
-    enum: ['Seminar', 'Workshop', 'NSS', 'Hackathon', 'Hackthon', 'Expert Lecture'],
+    enum: ['Seminar/Webinar', 'Workshop', 'NSS', 'Hackathon', 'Hackthon', 'Expert Lecture' , "other"],
     required: true
   },
   eventMode: {

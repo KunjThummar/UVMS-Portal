@@ -1,43 +1,31 @@
-const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
 const Student = require("../models/student.model");
 const ApiError = require("../utils/ApiError");
 
-function buildTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+// ==========================================
+// GMAIL API CLIENT (HTTPS Port 443 - Render Safe)
+// ==========================================
+function getGmailClient() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || "https://developers.google.com/oauthplayground";
 
-  if (!user || !pass) {
+  if (!clientId || !clientSecret || !refreshToken) {
     throw new Error(
-      "SMTP configuration is missing. Set SMTP_USER and SMTP_PASS in .env"
+      "Gmail API credentials missing. Ensure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REFRESH_TOKEN are set in .env"
     );
   }
 
-  // If using Gmail, use service: 'gmail' to bypass port 587 cloud firewall blocks on Render
-  const isGmail = host === "smtp.gmail.com" || (user && user.endsWith("@gmail.com"));
-  if (isGmail) {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: { user, pass },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
-  }
+  const oAuth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+  oAuth2Client.setCredentials({ refresh_token: refreshToken });
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-  });
+  return google.gmail({ version: "v1", auth: oAuth2Client });
 }
 
+// ==========================================
+// SEND MAIL VIA GMAIL REST API
+// ==========================================
 async function sendMail({ to, bcc, subject, html }) {
   const validTo = Array.isArray(to) ? to.filter(Boolean) : to ? [to] : [];
   const validBcc = Array.isArray(bcc) ? bcc.filter(Boolean) : bcc ? [bcc] : [];
@@ -46,18 +34,44 @@ async function sendMail({ to, bcc, subject, html }) {
     return null;
   }
 
-  const transporter = buildTransporter();
-  const from = process.env.SMTP_FROM || `"UVMS" <${process.env.SMTP_USER}>`;
+  const senderEmail = process.env.GMAIL_USER || "kunjthummar.ce@gmail.com";
+  const fromHeader = `"UVMS Portal" <${senderEmail}>`;
 
-  return transporter.sendMail({
-    from,
-    to: validTo.length ? validTo.join(", ") : from,
-    bcc: validBcc.length ? validBcc : undefined,
-    subject,
-    html
+  // Build standard RFC 2822 email format
+  const messageParts = [
+    `From: ${fromHeader}`,
+    validTo.length ? `To: ${validTo.join(", ")}` : `To: ${senderEmail}`,
+    validBcc.length ? `Bcc: ${validBcc.join(", ")}` : null,
+    `Subject: =?utf-8?B?${Buffer.from(subject).toString("base64")}?=`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=utf-8",
+    "Content-Transfer-Encoding: 7bit",
+    "", // Empty line separates headers from body
+    html,
+  ].filter((line) => line !== null);
+
+  const rawMessage = messageParts.join("\r\n");
+
+  // URL-safe Base64 encode the message as required by Gmail API
+  const encodedRaw = Buffer.from(rawMessage)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const gmail = getGmailClient();
+
+  return await gmail.users.messages.send({
+    userId: "me",
+    requestBody: {
+      raw: encodedRaw,
+    },
   });
 }
 
+// ==========================================
+// NOTIFY ELIGIBLE STUDENTS
+// ==========================================
 async function notifyEligibleStudents(event) {
   if (!event || !event._id) {
     throw new ApiError(400, "Event data is required");
@@ -106,7 +120,7 @@ async function notifyEligibleStudents(event) {
 
   const formattedStartDate = new Date(event.eventDate).toLocaleDateString();
   const formattedEndDate = event.eventEndDate ? new Date(event.eventEndDate).toLocaleDateString() : formattedStartDate;
-  const eventModeDisplay = event.eventMode ? (event.eventMode.charAt(0).toUpperCase() + event.eventMode.slice(1)) : 'Offline';
+  const eventModeDisplay = event.eventMode ? (event.eventMode.charAt(0).toUpperCase() + event.eventMode.slice(1)) : "Offline";
 
   const html = `
 <!DOCTYPE html>
@@ -178,8 +192,8 @@ async function notifyEligibleStudents(event) {
           
             </td>
           </tr>
-                    <!-- Main Content -->
-                    <tr>
+          <!-- Main Content -->
+          <tr>
             <td style="padding: 30px;">
 
               <h2 style="
@@ -484,24 +498,8 @@ async function notifyEligibleStudents(event) {
 </html>
   `;
 
-  // const html = `
-  //   <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;">
-  //     <h2>${event.title || "Volunteer Opportunity"}</h2>
-  //     <p><strong>Event Level:</strong> ${event.eventLevel}</p>
-  //     <p><strong>Description:</strong> ${event.description || "No description provided."}</p>
-  //     <p><strong>Event Date:</strong> ${new Date(event.eventDate).toLocaleString()}</p>
-  //     <p><strong>Application Deadline:</strong> ${new Date(event.applicationDeadline).toLocaleString()}</p>
-  //     <p><strong>Capacity:</strong> ${event.volunteerCapacity || 0}</p>
-  //     <p>We invite eligible students to apply before the deadline.</p>
-  //     <p>
-  //       <a href="${process.env.CLIENT_URL || "#"}">Apply Now</a> 
-  //     </p>
-  //   </div>
-  // `;
-  // here work is not completed in link 
-
   await sendMail({
-    to: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to: process.env.GMAIL_USER || "kunjthummar.ce@gmail.com",
     bcc: recipients,
     subject: `New Opportunity: ${event.title || "Volunteer Event"}`,
     html
@@ -509,7 +507,6 @@ async function notifyEligibleStudents(event) {
 
   return recipients.length;
 }
-
 
 // ==========================================
 // SEND PASSWORD RESET EMAIL
@@ -519,7 +516,6 @@ async function sendResetPasswordMail(toEmail, token) {
     throw new ApiError(400, "Recipient email and reset token are required.");
   }
 
-  // Uses CLIENT_URL from Render (e.g. https://your-frontend.onrender.com) or fallback
   const clientBaseUrl = process.env.CLIENT_URL || "http://localhost:5173";
   const resetLink = `${clientBaseUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
 
@@ -580,9 +576,8 @@ async function sendResetPasswordMail(toEmail, token) {
   });
 }
 
-
 module.exports = {
   sendMail,
   notifyEligibleStudents,
-  sendResetPasswordMail
+  sendResetPasswordMail,
 };
