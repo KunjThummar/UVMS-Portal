@@ -5,6 +5,7 @@ import RoleBadge from '../../components/common/RoleBadge';
 import Loader from '../../components/common/Loader';
 import { Award, Calendar, CheckCircle2, History, Shield, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatDate, formatDateRange } from '../../utils/dateUtils';
 
 export const StudentHistoryPage = () => {
   const [historyData, setHistoryData] = useState(null);
@@ -170,13 +171,8 @@ export const StudentHistoryPage = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', color: '#334155' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Calendar size={14} color="#2563eb" />
-                          {item.eventId?.eventDate ? new Date(item.eventId.eventDate).toLocaleDateString() : 'N/A'}
+                          {formatDateRange(item.eventId?.eventDate, item.eventId?.eventEndDate)}
                         </span>
-                        {item.eventId?.eventEndDate && new Date(item.eventId.eventEndDate).toLocaleDateString() !== new Date(item.eventId.eventDate).toLocaleDateString() && (
-                          <span style={{ fontSize: '11px', color: '#64748b', paddingLeft: '20px' }}>
-                            to {new Date(item.eventId.eventEndDate).toLocaleDateString()}
-                          </span>
-                        )}
                       </div>
                     </td>
                     <td>
@@ -195,7 +191,7 @@ export const StudentHistoryPage = () => {
                     <td style={{ fontSize: '13px', color: '#059669', fontWeight: 600 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <CheckCircle2 size={13} />
-                        {item.decisionAt ? new Date(item.decisionAt).toLocaleDateString() : 'Verified'}
+                        {item.decisionAt ? formatDate(item.decisionAt) : 'Verified'}
                       </span>
                     </td>
                   </tr>

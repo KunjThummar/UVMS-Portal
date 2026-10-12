@@ -17,6 +17,7 @@ import {
   Briefcase,
   Share2
 } from 'lucide-react';
+import { formatDate, formatDateTime } from '../../utils/dateUtils';
 
 export const StudentEventDetailsPage = () => {
   const { id } = useParams();
@@ -202,12 +203,12 @@ export const StudentEventDetailsPage = () => {
             }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
                 <Calendar size={16} color="#2563eb" />
-                <strong>Starts:</strong> {new Date(event.eventDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                <strong>Starts:</strong> {formatDateTime(event.eventDate)}
               </span>
               {event.eventEndDate && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
                   <Calendar size={16} color="#7c3aed" />
-                  <strong>Ends:</strong> {new Date(event.eventEndDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                  <strong>Ends:</strong> {formatDateTime(event.eventEndDate)}
                 </span>
               )}
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
@@ -216,7 +217,7 @@ export const StudentEventDetailsPage = () => {
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
                 <Clock size={16} color={isDeadlinePassed ? '#ef4444' : '#d97706'} />
-                <strong>Deadline:</strong> {new Date(event.applicationDeadline).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                <strong>Deadline:</strong> {formatDateTime(event.applicationDeadline)}
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
                 <Users size={16} color="#7c3aed" />
@@ -283,7 +284,7 @@ export const StudentEventDetailsPage = () => {
                   <span><strong>Role Applied:</strong> <RoleBadge role={existingApplication.appliedRole} /></span>
                   <span><strong>Status:</strong> <StatusBadge status={existingApplication.status} /></span>
                   <span style={{ fontSize: '12px', color: '#059669', marginTop: '4px' }}>
-                    Submitted on {new Date(existingApplication.appliedAt).toLocaleDateString()}
+                    Submitted on {formatDate(existingApplication.appliedAt)}
                   </span>
                 </div>
                 <div style={{ marginTop: '14px' }}>

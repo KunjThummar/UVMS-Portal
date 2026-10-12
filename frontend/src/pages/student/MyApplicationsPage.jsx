@@ -6,6 +6,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import RoleBadge from '../../components/common/RoleBadge';
 import Loader from '../../components/common/Loader';
 import { ClipboardList, Calendar, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
+import { formatDate, formatDateRange } from '../../utils/dateUtils';
 
 export const MyApplicationsPage = () => {
   const [applications, setApplications] = useState([]);
@@ -137,13 +138,8 @@ export const MyApplicationsPage = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '13px', color: '#334155' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Calendar size={14} color="#2563eb" />
-                        {app.eventId?.eventDate ? new Date(app.eventId.eventDate).toLocaleDateString() : 'N/A'}
+                        {formatDateRange(app.eventId?.eventDate, app.eventId?.eventEndDate)}
                       </span>
-                      {app.eventId?.eventEndDate && new Date(app.eventId.eventEndDate).toLocaleDateString() !== new Date(app.eventId.eventDate).toLocaleDateString() && (
-                        <span style={{ fontSize: '11px', color: '#64748b', paddingLeft: '20px' }}>
-                          to {new Date(app.eventId.eventEndDate).toLocaleDateString()}
-                        </span>
-                      )}
                       {app.eventId?.eventDay && (
                         <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 600, paddingLeft: '20px' }}>
                           {app.eventId.eventDay} {app.eventId.eventDay === 1 ? 'Day' : 'Days'}
@@ -152,7 +148,7 @@ export const MyApplicationsPage = () => {
                     </div>
                   </td>
                   <td style={{ fontSize: '13px', color: '#64748b' }}>
-                    {new Date(app.appliedAt).toLocaleDateString()}
+                    {formatDate(app.appliedAt)}
                   </td>
                   <td>
                     <StatusBadge status={app.status} />

@@ -5,6 +5,7 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Loader from '../../components/common/Loader';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const AdminInstitutesPage = () => {
   const [institutes, setInstitutes] = useState([]);
@@ -136,7 +137,7 @@ export const AdminInstitutesPage = () => {
                     </span>
                   </td>
                   <td style={{ fontSize: '13px', color: '#64748b' }}>
-                    {inst.createdAt ? new Date(inst.createdAt).toLocaleDateString() : 'N/A'}
+                    {formatDate(inst.createdAt)}
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

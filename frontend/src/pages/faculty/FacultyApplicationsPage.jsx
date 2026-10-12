@@ -19,6 +19,7 @@ import {
   Search,
   History
 } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const FacultyApplicationsPage = () => {
   const { id } = useParams();
@@ -146,10 +147,10 @@ export const FacultyApplicationsPage = () => {
             </h1>
             <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#64748b', marginTop: '6px', flexWrap: 'wrap' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Calendar size={14} color="#2563eb" /> {event?.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'N/A'}
+                <Calendar size={14} color="#2563eb" /> {formatDate(event?.eventDate)}
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Clock size={14} color="#d97706" /> Deadline: {event?.applicationDeadline ? new Date(event.applicationDeadline).toLocaleDateString() : 'N/A'}
+                <Clock size={14} color="#d97706" /> Deadline: {formatDate(event?.applicationDeadline)}
               </span>
             </div>
           </div>
@@ -320,7 +321,7 @@ export const FacultyApplicationsPage = () => {
 
                     {/* Applied Date */}
                     <td style={{ fontSize: '13px', color: '#64748b' }}>
-                      {new Date(app.appliedAt).toLocaleDateString()}
+                      {formatDate(app.appliedAt)}
                     </td>
 
                     {/* Status */}
@@ -355,7 +356,7 @@ export const FacultyApplicationsPage = () => {
                         </div>
                       ) : (
                         <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
-                          Decided on {app.decisionAt ? new Date(app.decisionAt).toLocaleDateString() : 'Record'}
+                          Decided on {app.decisionAt ? formatDate(app.decisionAt) : 'Record'}
                         </span>
                       )}
                     </td>

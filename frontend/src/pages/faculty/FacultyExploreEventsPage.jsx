@@ -17,6 +17,7 @@ import {
   Eye,
   Info
 } from 'lucide-react';
+import { formatDate, formatDateRange } from '../../utils/dateUtils';
 
 export const FacultyExploreEventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -241,10 +242,7 @@ export const FacultyExploreEventsPage = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#334155', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Calendar size={14} color="#2563eb" style={{ flexShrink: 0 }} />
-                      <span>{new Date(ev.eventDate).toLocaleDateString()}</span>
-                      {ev.eventEndDate && new Date(ev.eventEndDate).toLocaleDateString() !== new Date(ev.eventDate).toLocaleDateString() && (
-                        <span> to {new Date(ev.eventEndDate).toLocaleDateString()}</span>
-                      )}
+                      <span>{formatDateRange(ev.eventDate, ev.eventEndDate)}</span>
                       <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 600, marginLeft: 'auto' }}>
                         {ev.eventDay || 1} {(ev.eventDay || 1) === 1 ? 'Day' : 'Days'}
                       </span>
@@ -252,7 +250,7 @@ export const FacultyExploreEventsPage = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: isDeadlinePassed ? '#ef4444' : '#64748b' }}>
                       <Clock size={14} style={{ flexShrink: 0 }} />
-                      <span>Deadline: {new Date(ev.applicationDeadline).toLocaleDateString()}</span>
+                      <span>Deadline: {formatDate(ev.applicationDeadline)}</span>
                     </div>
                   </div>
 

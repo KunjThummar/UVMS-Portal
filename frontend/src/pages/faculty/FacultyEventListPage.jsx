@@ -17,6 +17,7 @@ import {
   Bell,
   ArrowRight
 } from 'lucide-react';
+import { formatDate, formatDateRange } from '../../utils/dateUtils';
 
 export const FacultyEventListPage = () => {
   const { user } = useAuth();
@@ -187,12 +188,7 @@ export const FacultyEventListPage = () => {
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', color: '#334155' }}>
-                        <span>{new Date(ev.eventDate).toLocaleDateString()}</span>
-                        {ev.eventEndDate && new Date(ev.eventEndDate).toLocaleDateString() !== new Date(ev.eventDate).toLocaleDateString() && (
-                          <span style={{ color: '#64748b', fontSize: '12px' }}>
-                            to {new Date(ev.eventEndDate).toLocaleDateString()}
-                          </span>
-                        )}
+                        <span>{formatDateRange(ev.eventDate, ev.eventEndDate)}</span>
                         <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 600 }}>
                           {ev.eventDay || 1} {(ev.eventDay || 1) === 1 ? 'Day' : 'Days'}
                         </span>
@@ -200,7 +196,7 @@ export const FacultyEventListPage = () => {
                     </td>
                     <td>
                       <span style={{ fontSize: '13px', color: isDeadlinePassed ? '#ef4444' : '#334155' }}>
-                        {new Date(ev.applicationDeadline).toLocaleDateString()}
+                        {formatDate(ev.applicationDeadline)}
                       </span>
                     </td>
                     <td>

@@ -2,6 +2,7 @@ import React from 'react';
 import Modal from '../common/Modal';
 import RoleBadge from '../common/RoleBadge';
 import { Calendar, Award, CheckCircle2, User, Phone, Mail } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const PastHistoryModal = ({ isOpen, onClose, student, pastParticipations = [] }) => {
   if (!student) return null;
@@ -94,7 +95,7 @@ export const PastHistoryModal = ({ isOpen, onClose, student, pastParticipations 
                     </span>
                   )}
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Calendar size={13} /> {item.eventDate ? new Date(item.eventDate).toLocaleDateString() : 'N/A'}
+                    <Calendar size={13} /> {formatDate(item.eventDate)}
                   </span>
                   <span>Level: {item.eventLevel || 'University'}</span>
                 </div>

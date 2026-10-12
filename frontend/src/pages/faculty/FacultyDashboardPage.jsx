@@ -15,6 +15,7 @@ import {
   Briefcase,
   AlertCircle
 } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const FacultyDashboardPage = () => {
   const { user } = useAuth();
@@ -179,7 +180,7 @@ export const FacultyDashboardPage = () => {
                     </td>
                     <td>
                       <span style={{ fontSize: '13px', color: '#334155' }}>
-                        {new Date(ev.eventDate).toLocaleDateString()}
+                        {formatDate(ev.eventDate)}
                       </span>
                     </td>
                     <td>

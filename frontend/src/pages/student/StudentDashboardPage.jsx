@@ -18,6 +18,7 @@ import {
   Mail,
   GraduationCap
 } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const StudentDashboardPage = () => {
   const { user } = useAuth();
@@ -200,13 +201,13 @@ export const StudentDashboardPage = () => {
                       {app.eventId?.title || 'Unknown Event'}
                     </td>
                     <td>
-                      {app.eventId?.eventDate ? new Date(app.eventId.eventDate).toLocaleDateString() : 'N/A'}
+                      {formatDate(app.eventId?.eventDate)}
                     </td>
                     <td>
                       <RoleBadge role={app.appliedRole} />
                     </td>
                     <td style={{ color: '#64748b' }}>
-                      {new Date(app.appliedAt).toLocaleDateString()}
+                      {formatDate(app.appliedAt)}
                     </td>
                     <td>
                       <StatusBadge status={app.status} />

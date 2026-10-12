@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import StatusBadge from '../common/StatusBadge';
 import { Calendar, Clock, Users, ArrowRight, Building } from 'lucide-react';
+import { formatDate, formatDateRange } from '../../utils/dateUtils';
 
 export const EventCard = ({ event, linkTo, actionText = 'View Details' }) => {
   if (!event) return null;
@@ -89,10 +90,7 @@ export const EventCard = ({ event, linkTo, actionText = 'View Details' }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Calendar size={15} color="#2563eb" style={{ flexShrink: 0 }} />
           <span>
-            <strong>Date:</strong> {new Date(event.eventDate).toLocaleDateString()}
-            {event.eventEndDate && new Date(event.eventEndDate).toLocaleDateString() !== new Date(event.eventDate).toLocaleDateString() && (
-              <> - {new Date(event.eventEndDate).toLocaleDateString()}</>
-            )}
+            <strong>Date:</strong> {formatDateRange(event.eventDate, event.eventEndDate)}
             <span style={{ marginLeft: '6px', fontSize: '11px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontWeight: 600, color: '#475569' }}>
               {event.eventDay || 1} {(event.eventDay || 1) === 1 ? 'Day' : 'Days'}
             </span>
@@ -111,7 +109,7 @@ export const EventCard = ({ event, linkTo, actionText = 'View Details' }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Clock size={15} color={isDeadlinePassed ? '#ef4444' : '#f59e0b'} />
           <span>
-            <strong>Deadline:</strong> {new Date(event.applicationDeadline).toLocaleDateString()}
+            <strong>Deadline:</strong> {formatDate(event.applicationDeadline)}
             {isDeadlinePassed && <span style={{ color: '#ef4444', fontWeight: 600, marginLeft: '6px' }}>(Passed)</span>}
           </span>
         </div>

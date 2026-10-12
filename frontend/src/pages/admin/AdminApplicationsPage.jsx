@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const AdminApplicationsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -130,7 +131,7 @@ export const AdminApplicationsPage = () => {
                 <option value="all">★ All Events (University-wide Ledger)</option>
                 {eventsList.map((ev) => (
                   <option key={ev._id} value={ev._id}>
-                    [{ev.status}] {ev.title} — {ev.organizer} ({ev.academicYear || (ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : 'N/A')})
+                    [{ev.status}] {ev.title} — {ev.organizer} ({ev.academicYear || formatDate(ev.eventDate)})
                   </option>
                 ))}
               </select>
@@ -192,10 +193,10 @@ export const AdminApplicationsPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
                   <span>Organizer: {selectedEvent.organizer}{selectedEvent.subOrganizer ? ` (${selectedEvent.subOrganizer})` : ''}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Calendar size={13} /> {selectedEvent.eventDate ? new Date(selectedEvent.eventDate).toLocaleDateString() : 'N/A'}
+                    <Calendar size={13} /> {formatDate(selectedEvent.eventDate)}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={13} /> Deadline: {selectedEvent.applicationDeadline ? new Date(selectedEvent.applicationDeadline).toLocaleDateString() : 'N/A'}
+                    <Clock size={13} /> Deadline: {formatDate(selectedEvent.applicationDeadline)}
                   </span>
                 </div>
               </div>
@@ -298,7 +299,7 @@ export const AdminApplicationsPage = () => {
                       <RoleBadge role={app.appliedRole} />
                     </td>
                     <td style={{ fontSize: '13px', color: '#64748b' }}>
-                      {new Date(app.appliedAt).toLocaleDateString()}
+                      {formatDate(app.appliedAt)}
                     </td>
                     <td>
                       <StatusBadge status={app.status} />

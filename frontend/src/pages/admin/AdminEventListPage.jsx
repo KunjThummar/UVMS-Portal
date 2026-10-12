@@ -6,6 +6,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Loader from '../../components/common/Loader';
 import { Search, Trash2, Archive, Calendar, Users, Eye, ArrowRight, Plus, Edit, FileSpreadsheet, Bell } from 'lucide-react';
+import { formatDate, formatDateRange } from '../../utils/dateUtils';
 
 export const AdminEventListPage = () => {
   const [events, setEvents] = useState([]);
@@ -279,12 +280,7 @@ export const AdminEventListPage = () => {
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', color: '#334155' }}>
-                      <span>{new Date(ev.eventDate).toLocaleDateString()}</span>
-                      {ev.eventEndDate && new Date(ev.eventEndDate).toLocaleDateString() !== new Date(ev.eventDate).toLocaleDateString() && (
-                        <span style={{ color: '#64748b', fontSize: '12px' }}>
-                          to {new Date(ev.eventEndDate).toLocaleDateString()}
-                        </span>
-                      )}
+                      <span>{formatDateRange(ev.eventDate, ev.eventEndDate)}</span>
                       <span style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 600 }}>
                         {ev.eventDay || 1} {(ev.eventDay || 1) === 1 ? 'Day' : 'Days'}
                       </span>

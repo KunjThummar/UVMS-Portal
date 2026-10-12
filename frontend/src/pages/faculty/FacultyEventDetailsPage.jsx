@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
 
 export const FacultyEventDetailsPage = () => {
   const { id } = useParams();
@@ -228,7 +229,7 @@ export const FacultyEventDetailsPage = () => {
               <div>
                 <span style={{ color: '#64748b', display: 'block', marginBottom: '3px' }}>Start Date</span>
                 <span style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Calendar size={14} color="#2563eb" /> {new Date(event.eventDate).toLocaleDateString()}
+                  <Calendar size={14} color="#2563eb" /> {formatDate(event.eventDate)}
                 </span>
               </div>
 
@@ -236,7 +237,7 @@ export const FacultyEventDetailsPage = () => {
                 <div>
                   <span style={{ color: '#64748b', display: 'block', marginBottom: '3px' }}>End Date</span>
                   <span style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={14} color="#2563eb" /> {new Date(event.eventEndDate).toLocaleDateString()}
+                    <Calendar size={14} color="#2563eb" /> {formatDate(event.eventEndDate)}
                   </span>
                 </div>
               )}
@@ -251,7 +252,7 @@ export const FacultyEventDetailsPage = () => {
               <div>
                 <span style={{ color: '#64748b', display: 'block', marginBottom: '3px' }}>Application Deadline</span>
                 <span style={{ fontWeight: 600, color: isDeadlinePassed ? '#ef4444' : '#d97706', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Clock size={14} /> {new Date(event.applicationDeadline).toLocaleDateString()}
+                  <Clock size={14} /> {formatDate(event.applicationDeadline)}
                 </span>
               </div>
             </div>
