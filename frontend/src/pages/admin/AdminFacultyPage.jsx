@@ -22,6 +22,7 @@ export const AdminFacultyPage = () => {
 
   const [formData, setFormData] = useState({
     fullName: '',
+    facultyCode: '',
     email: '',
     mobileNumber: '',
     password: '',
@@ -57,6 +58,7 @@ export const AdminFacultyPage = () => {
     setEditingFaculty(null);
     setFormData({
       fullName: '',
+      facultyCode: '',
       email: '',
       mobileNumber: '',
       password: '',
@@ -70,6 +72,7 @@ export const AdminFacultyPage = () => {
     setEditingFaculty(faculty);
     setFormData({
       fullName: faculty.fullName || '',
+      facultyCode: faculty.facultyCode || '',
       email: faculty.email || '',
       mobileNumber: faculty.mobileNumber || '',
       password: '',
@@ -87,6 +90,7 @@ export const AdminFacultyPage = () => {
       if (editingFaculty) {
         const payload = {
           fullName: formData.fullName,
+          facultyCode: formData.facultyCode.trim(),
           email: formData.email,
           mobileNumber: formData.mobileNumber,
           instituteId: formData.instituteId,
@@ -97,7 +101,10 @@ export const AdminFacultyPage = () => {
         await userService.updateFaculty(editingFaculty._id, payload);
         showSuccess(`Faculty ${formData.fullName} updated!`);
       } else {
-        await userService.createFaculty(formData);
+        await userService.createFaculty({
+          ...formData,
+          facultyCode: formData.facultyCode.trim()
+        });
         showSuccess(`Faculty member ${formData.fullName} created!`);
       }
 
@@ -173,9 +180,14 @@ export const AdminFacultyPage = () => {
               {facultyList.map((fac) => (
                 <tr key={fac._id}>
                   <td>
-                    <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>
-                      {fac.fullName}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>
+                        {fac.fullName}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                        Code: {fac.facultyCode || 'N/A'}
+                      </span>
+                    </div>
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
@@ -251,15 +263,30 @@ export const AdminFacultyPage = () => {
         maxWidth="540px"
       >
         <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Full Name *</label>
-            <input
-              type="text"
-              className="form-input"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              required
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Full Name *</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Dr. / Prof. Full Name"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Faculty Code *</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. FAC-CE-001"
+                value={formData.facultyCode}
+                onChange={(e) => setFormData({ ...formData, facultyCode: e.target.value })}
+                required
+              />
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
