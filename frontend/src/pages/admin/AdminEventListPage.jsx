@@ -261,9 +261,16 @@ export const AdminEventListPage = () => {
                     </div>
                   </td>
                   <td>
-                    <span style={{ fontSize: '13px', color: '#475569' }}>
-                      {ev.createdBy?.fullName || 'Faculty'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                        {ev.createdBy?.fullName || 'Faculty'}
+                      </span>
+                      {ev.createdBy?.facultyCode && (
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>
+                          Code: {ev.createdBy.facultyCode}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#2563eb' }}>

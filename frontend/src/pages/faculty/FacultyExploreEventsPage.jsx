@@ -280,7 +280,7 @@ export const FacultyExploreEventsPage = () => {
                 {/* Footer Actions */}
                 <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: '#64748b' }}>
-                    By: {ev.createdBy?.fullName || 'Faculty Organizer'}
+                    By: {ev.createdBy?.fullName || 'Faculty Organizer'}{ev.createdBy?.facultyCode ? ` [${ev.createdBy.facultyCode}]` : ''}
                   </span>
                   <Link
                     to={`/faculty/explore/${ev._id}`}

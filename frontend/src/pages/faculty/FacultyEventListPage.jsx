@@ -176,7 +176,7 @@ export const FacultyEventListPage = () => {
                           </span>
                         )}
                         <span style={{ fontSize: '12px', color: '#64748b' }}>
-                          By: {ev.createdBy?.fullName || 'Faculty'} {isOwner && '(You)'}
+                          By: {ev.createdBy?.fullName || 'Faculty'}{ev.createdBy?.facultyCode ? ` [${ev.createdBy.facultyCode}]` : ''} {isOwner && '(You)'}
                         </span>
                       </div>
                     </td>

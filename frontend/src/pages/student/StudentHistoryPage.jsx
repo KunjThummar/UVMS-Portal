@@ -183,7 +183,14 @@ export const StudentHistoryPage = () => {
                       <RoleBadge role={item.appliedRole} />
                     </td>
                     <td style={{ fontSize: '13px', color: '#475569' }}>
-                      {item.eventId?.createdBy?.fullName || 'Faculty Organizer'}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{item.eventId?.createdBy?.fullName || 'Faculty Organizer'}</span>
+                        {item.eventId?.createdBy?.facultyCode && (
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            ({item.eventId.createdBy.facultyCode})
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ fontSize: '13px', color: '#059669', fontWeight: 600 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

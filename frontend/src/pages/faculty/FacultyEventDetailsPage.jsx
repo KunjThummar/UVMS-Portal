@@ -295,6 +295,11 @@ export const FacultyEventDetailsPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: '#0f172a' }}>
                 <User size={15} color="#7c3aed" />
                 <span>{event.createdBy?.fullName || 'Faculty Organizer'}</span>
+                {event.createdBy?.facultyCode && (
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', background: '#eff6ff', color: '#2563eb', borderRadius: '4px' }}>
+                    {event.createdBy.facultyCode}
+                  </span>
+                )}
               </div>
               {event.createdBy?.email && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>

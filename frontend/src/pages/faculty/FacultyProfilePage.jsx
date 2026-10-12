@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Mail, Phone, Building2, Building, Briefcase } from 'lucide-react';
+import { User, Mail, Phone, Building2, Building, Briefcase, Award } from 'lucide-react';
 
 export const FacultyProfilePage = () => {
   const { user } = useAuth();
@@ -43,6 +43,11 @@ export const FacultyProfilePage = () => {
             </div>
 
             <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: '#334155' }}>
+                <Award size={16} color="#64748b" />
+                <span><strong>Faculty Code:</strong> {user?.facultyCode || 'Not configured'}</span>
+              </div>
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: '#334155' }}>
                 <Mail size={16} color="#64748b" />
                 <span><strong>Official Email:</strong> {user?.email}</span>

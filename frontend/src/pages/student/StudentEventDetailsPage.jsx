@@ -249,6 +249,9 @@ export const StudentEventDetailsPage = () => {
                 <strong style={{ color: '#1e293b' }}>
                   {event.createdBy?.fullName || 'University Faculty'}
                 </strong>
+                {event.createdBy?.facultyCode && (
+                  <span style={{ color: '#2563eb', fontWeight: 600 }}> [{event.createdBy.facultyCode}]</span>
+                )}
                 {event.createdBy?.email && (
                   <span style={{ color: '#64748b' }}> ({event.createdBy.email})</span>
                 )}
