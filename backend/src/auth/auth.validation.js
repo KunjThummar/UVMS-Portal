@@ -44,6 +44,8 @@ const studentRegisterSchema = Joi.object({
 const facultyRegisterSchema = Joi.object({
     fullName: Joi.string().trim().required(),
 
+    facultyCode: Joi.string().trim().required(),
+
     email: Joi.string()
         .trim()
         .lowercase()

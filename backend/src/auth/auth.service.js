@@ -112,6 +112,7 @@ const loginStudent = async (email, password) => {
 const registerFaculty = async (data) => {
     const {
         fullName,
+        facultyCode,
         email,
         mobileNumber,
         password,
@@ -126,12 +127,19 @@ const registerFaculty = async (data) => {
         throw new ApiError(409, "Email already registered.");
     }
 
+    // Check if facultyCode already exists
+    const existingCode = await Faculty.findOne({ facultyCode: facultyCode.trim() });
+    if (existingCode) {
+        throw new ApiError(409, "Faculty code already registered.");
+    }
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create faculty
     const faculty = await Faculty.create({
         fullName,
+        facultyCode: facultyCode.trim(),
         email,
         mobileNumber,
         passwordHash,

@@ -24,6 +24,11 @@ const create = async (data) => {
         throw new ApiError(409, 'Email already registered.');
     }
 
+    const existingCode = await Faculty.findOne({ facultyCode: facultyCode.trim() });
+    if (existingCode) {
+        throw new ApiError(409, 'Faculty code already registered.');
+    }
+
     const institute = await Institute.findById(instituteId);
     if (!institute) {
         throw new ApiError(404, 'No institute with given instituteId found');
@@ -40,7 +45,7 @@ const create = async (data) => {
         const faculty = new Faculty({
             fullName,
             email,
-            facultyCode,
+            facultyCode: facultyCode.trim(),
             mobileNumber,
             passwordHash,
             instituteId,
@@ -63,6 +68,17 @@ const updateById = async (id, data) => {
         if (existingEmail) {
             throw new ApiError(409, 'Email already registered.');
         }
+    }
+
+    if (data.facultyCode && data.facultyCode.trim() !== faculty.facultyCode) {
+        const existingCode = await Faculty.findOne({ 
+            facultyCode: data.facultyCode.trim(), 
+            _id: { $ne: id } 
+        });
+        if (existingCode) {
+            throw new ApiError(409, 'Faculty code already registered.');
+        }
+        data.facultyCode = data.facultyCode.trim();
     }
 
     if (data.instituteId) {

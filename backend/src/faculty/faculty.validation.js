@@ -5,6 +5,7 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const validateCreateFaculty = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().trim().required(),
+        facultyCode: Joi.string().trim().required(),
         email: Joi.string().trim().lowercase().email().required(),
         mobileNumber: Joi.string().trim().pattern(/^[0-9]{10}$/).required(),
         password: Joi.string().min(6).required(),
@@ -17,6 +18,7 @@ const validateCreateFaculty = (data) => {
 const validateUpdateFaculty = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().trim().optional(),
+        facultyCode: Joi.string().trim().optional(),
         email: Joi.string().trim().lowercase().email().optional(),
         mobileNumber: Joi.string().trim().pattern(/^[0-9]{10}$/).optional(),
         password: Joi.string().min(6).optional(),
