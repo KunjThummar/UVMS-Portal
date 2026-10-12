@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const { formatDate } = require('../utils/dateFormatter');
 
 const styleHeaderRow = (row, bgColor = '2563EB') => {
   row.eachCell((cell) => {
@@ -87,10 +88,10 @@ async function generateEventsMasterWorkbook(events, academicYearLabel = '') {
       eventType: ev.eventType,
       eventMode: ev.eventMode ? ev.eventMode.toUpperCase() : 'OFFLINE',
       status: ev.status,
-      eventDate: ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : '',
-      eventEndDate: ev.eventEndDate ? new Date(ev.eventEndDate).toLocaleDateString() : '',
+      eventDate: formatDate(ev.eventDate, ''),
+      eventEndDate: formatDate(ev.eventEndDate, ''),
       eventDay: ev.eventDay || 1,
-      applicationDeadline: ev.applicationDeadline ? new Date(ev.applicationDeadline).toLocaleDateString() : '',
+      applicationDeadline: formatDate(ev.applicationDeadline, ''),
       volunteerCapacity: capacity,
       approvedCount: approved,
       remainingSlots: remaining,
@@ -102,7 +103,7 @@ async function generateEventsMasterWorkbook(events, academicYearLabel = '') {
       coordinatorCode: ev.createdBy?.facultyCode || 'N/A',
       coordinatorEmail: ev.createdBy?.email || 'N/A',
       isArchived: ev.isArchived ? 'Yes' : 'No',
-      createdAt: ev.createdAt ? new Date(ev.createdAt).toLocaleDateString() : '',
+      createdAt: formatDate(ev.createdAt, ''),
       description: ev.description || ''
     });
 

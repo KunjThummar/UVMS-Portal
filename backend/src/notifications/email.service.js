@@ -1,6 +1,7 @@
 const { google } = require("googleapis");
 const Student = require("../models/student.model");
 const ApiError = require("../utils/ApiError");
+const { formatDate, formatDateTime } = require("../utils/dateFormatter");
 
 // ==========================================
 // GMAIL API CLIENT (HTTPS Port 443 - Render Safe)
@@ -118,8 +119,8 @@ async function notifyEligibleStudents(event) {
     return 0;
   }
 
-  const formattedStartDate = new Date(event.eventDate).toLocaleDateString();
-  const formattedEndDate = event.eventEndDate ? new Date(event.eventEndDate).toLocaleDateString() : formattedStartDate;
+  const formattedStartDate = formatDate(event.eventDate);
+  const formattedEndDate = event.eventEndDate ? formatDate(event.eventEndDate) : formattedStartDate;
   const eventModeDisplay = event.eventMode ? (event.eventMode.charAt(0).toUpperCase() + event.eventMode.slice(1)) : "Offline";
 
   const html = `
@@ -373,7 +374,7 @@ async function notifyEligibleStudents(event) {
                     font-weight: bold;
                     border-top: 1px solid #e5e7eb;
                   ">
-                    ${new Date(event.applicationDeadline).toLocaleString()}
+                    ${formatDateTime(event.applicationDeadline)}
                   </td>
                 </tr>
 
