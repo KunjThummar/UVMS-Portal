@@ -141,7 +141,7 @@ async function getEligibleEventsForStudent(student, filters = {}) {
 
   try {
     const events = await Event.find(query)
-      .populate('createdBy', 'fullName email')
+      .populate('createdBy', 'fullName email facultyCode')
       .populate('targetInstituteIds', 'code name')
       .populate('targetDepartmentIds', 'code name instituteId')
       .sort({ eventDate: 1 });
@@ -154,7 +154,7 @@ async function getEligibleEventsForStudent(student, filters = {}) {
 
 async function getEventById(eventId) {
   const event = await Event.findById(eventId)
-    .populate('createdBy', 'fullName email')
+    .populate('createdBy', 'fullName email facultyCode')
     .populate('targetInstituteIds', 'code name')
     .populate('targetDepartmentIds', 'code name instituteId');
 
@@ -269,7 +269,7 @@ async function getAllEventsForFacultyOrAdmin(filters = {}) {
 
   try {
     const events = await Event.find(query)
-      .populate('createdBy', 'fullName email')
+      .populate('createdBy', 'fullName email facultyCode')
       .populate('targetInstituteIds', 'code name')
       .populate('targetDepartmentIds', 'code name instituteId')
       .sort({ eventDate: 1 });

@@ -160,7 +160,7 @@ const getParticipationHistory = async (studentId) => {
         select: "title description eventDate eventEndDate academicYear organizer subOrganizer eventType eventMode eventDay applicationDeadline volunteerCapacity approvedCount eventLevel status isArchived createdBy",
         populate: {
             path: "createdBy",
-            select: "fullName email"
+            select: "fullName email facultyCode"
         }
     })
     .sort({ appliedAt: -1 });
