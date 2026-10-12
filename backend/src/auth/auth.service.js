@@ -133,6 +133,17 @@ const registerFaculty = async (data) => {
         throw new ApiError(409, "Faculty code already registered.");
     }
 
+    // Verify Institute & Department
+    const institute = await Institute.findById(instituteId);
+    if (!institute) {
+        throw new ApiError(404, "No institute with given instituteId found.");
+    }
+
+    const department = await Department.findById(departmentId);
+    if (!department) {
+        throw new ApiError(404, "No department with given departmentId found.");
+    }
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 

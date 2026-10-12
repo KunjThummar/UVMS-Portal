@@ -9,6 +9,7 @@ import StudentLoginPage from '../pages/public/StudentLoginPage';
 import FacultyLoginPage from '../pages/public/FacultyLoginPage';
 import AdminLoginPage from '../pages/public/AdminLoginPage';
 import StudentRegisterPage from '../pages/public/StudentRegisterPage';
+import FacultyRegisterPage from '../pages/public/FacultyRegisterPage';
 import ForgotPasswordPage from '../pages/public/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/public/ResetPasswordPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -49,6 +50,7 @@ export const AppRoutes = () => {
       <Route path="/login/faculty" element={<FacultyLoginPage />} />
       <Route path="/login/admin" element={<AdminLoginPage />} />
       <Route path="/register/student" element={<StudentRegisterPage />} />
+      <Route path="/register/faculty" element={<FacultyRegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/not-authorized" element={<NotAuthorizedPage />} />
